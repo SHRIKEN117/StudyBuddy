@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Ubuntu", sans-serif;
+  --font-heading: "Ubuntu", sans-serif;
+  --font-mono: "Ubuntu Mono", monospace;
+  --breakpoint-3xl: 1920px;
+  --color-primary: #4F46E5;
+  --color-accent: #F59E0B;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #FAFAF9;
+  }
+
+  /* Custom scrollbar — webkit */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d6d3d1;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a8a29e;
+  }
+
+  /* Text selection */
+  ::selection {
+    background-color: rgba(79, 70, 229, 0.15);
+    color: #1e1b4b;
+  }
+}
