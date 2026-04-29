@@ -57,11 +57,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = context.watch<AuthProvider>().user;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: _loadDashboard,
-        color: AppColors.primary,
-        child: CustomScrollView(
+    return RefreshIndicator(
+      onRefresh: _loadDashboard,
+      color: AppColors.primary,
+      child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: _DashboardHeader(
@@ -93,8 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -169,6 +167,27 @@ class _DashboardHeader extends StatelessWidget {
                   colors: [
                     AppColors.primaryLight.withValues(alpha: isDark ? 0.18 : 0.10),
                     Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Hamburger menu
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                child: Row(
+                  children: [
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: Icon(Icons.menu_rounded,
+                            color: isDark ? Colors.white70 : AppColors.textSecondary,
+                            size: 24.r),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
                   ],
                 ),
               ),

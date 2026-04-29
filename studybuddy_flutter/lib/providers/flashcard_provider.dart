@@ -62,14 +62,14 @@ class FlashcardProvider extends ChangeNotifier {
     }
   }
 
-  Future<FlashcardSet?> generate(String documentId) async {
+  Future<FlashcardSet?> generate(String documentId, {int numCards = 10}) async {
     _generating = true;
     _error = null;
     notifyListeners();
     try {
       final res = await ApiService.post(
         ApiConstants.generateFlashcards,
-        {'documentId': documentId},
+        {'documentId': documentId, 'numCards': numCards},
       );
       final data = res['data'];
       FlashcardSet? set;

@@ -73,14 +73,13 @@ Future<void> _changePassword() async {
     final user = context.watch<AuthProvider>().user;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: CustomScrollView(
+    return CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: _ProfileHeader(user: user, isDark: isDark),
           ),
           SliverPadding(
-            padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
+            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _SectionCard(
@@ -180,8 +179,7 @@ Future<void> _changePassword() async {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 }
 
@@ -206,6 +204,27 @@ class _ProfileHeader extends StatelessWidget {
           Positioned.fill(
             child: Container(
               color: isDark ? AppColors.darkBackground : AppColors.background,
+            ),
+          ),
+          // Hamburger
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                child: Row(
+                  children: [
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: Icon(Icons.menu_rounded,
+                            color: isDark ? Colors.white70 : AppColors.textSecondary,
+                            size: 24.r),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
           Positioned(

@@ -29,11 +29,10 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
     final provider = context.watch<FlashcardProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: context.read<FlashcardProvider>().loadSets,
-        color: AppColors.primary,
-        child: CustomScrollView(
+    return RefreshIndicator(
+      onRefresh: context.read<FlashcardProvider>().loadSets,
+      color: AppColors.primary,
+      child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: _FlashcardsHeader(isDark: isDark),
@@ -53,11 +52,11 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
               )
             else
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
+                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => Padding(
-                      padding: EdgeInsets.only(bottom: 12.h),
+                      padding: EdgeInsets.only(bottom: 14.h),
                       child: _FlashcardSetCard(
                         set: provider.sets[i],
                         onStudy: () => Navigator.push(
@@ -104,8 +103,7 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 140)),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -125,6 +123,27 @@ class _FlashcardsHeader extends StatelessWidget {
           Positioned.fill(
             child: Container(
               color: isDark ? AppColors.darkBackground : AppColors.background,
+            ),
+          ),
+          // Hamburger
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                child: Row(
+                  children: [
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: Icon(Icons.menu_rounded,
+                            color: isDark ? Colors.white70 : AppColors.textSecondary,
+                            size: 24.r),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
           Positioned(

@@ -1,4 +1,3 @@
-import 'dart:ui' show ImageFilter;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:flutter/material.dart';
@@ -137,7 +136,7 @@ class _SplashScreenState extends State<_SplashScreen>
     _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _textCtrl, curve: Curves.easeOut),
     );
-_logoCtrl.forward().then((_) => _textCtrl.forward());
+    _logoCtrl.forward().then((_) => _textCtrl.forward());
   }
 
   @override
@@ -153,7 +152,6 @@ _logoCtrl.forward().then((_) => _textCtrl.forward());
       backgroundColor: AppColors.darkBackground,
       body: Stack(
         children: [
-          // Background blobs
           Positioned(
             top: -80, right: -60,
             child: Container(
@@ -193,12 +191,10 @@ _logoCtrl.forward().then((_) => _textCtrl.forward());
               ),
             ),
           ),
-          // Main content
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Animated logo
                 AnimatedBuilder(
                   animation: _logoCtrl,
                   builder: (_, _) => Opacity(
@@ -214,7 +210,6 @@ _logoCtrl.forward().then((_) => _textCtrl.forward());
                   ),
                 ),
                 const SizedBox(height: 48),
-                // Subtle loading dots
                 AnimatedBuilder(
                   animation: _textCtrl,
                   builder: (_, _) => FadeTransition(
@@ -291,7 +286,7 @@ class _LoadingDotsState extends State<_LoadingDots>
   }
 }
 
-// ── Main shell with floating pill nav ─────────────────────────────────────────
+// ── Main shell with drawer nav ─────────────────────────────────────────────────
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -305,7 +300,6 @@ class _MainShellState extends State<MainShell> {
 
   void _setTab(int i) => setState(() => _tab = i);
 
-  // Lazy: evaluated on first access so _setTab is always available.
   late final _screens = <Widget>[
     DashboardScreen(onTabTap: _setTab),
     const DocumentListScreen(),
@@ -314,119 +308,253 @@ class _MainShellState extends State<MainShell> {
     const ProfileScreen(),
   ];
 
-  static const _navItems = [
-    _NavItem(Icons.home_rounded, Icons.home_outlined, 'Home'),
-    _NavItem(Icons.description_rounded, Icons.description_outlined, 'Docs'),
-    _NavItem(Icons.style_rounded, Icons.style_outlined, 'Cards'),
-    _NavItem(Icons.quiz_rounded, Icons.quiz_outlined, 'Quizzes'),
-    _NavItem(Icons.person_rounded, Icons.person_outline_rounded, 'Profile'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final safeTab = _tab.clamp(0, _screens.length - 1);
+    final user = context.watch<AuthProvider>().user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      drawer: _AppDrawer(
+        currentIndex: safeTab,
+        user: user,
+        isDark: isDark,
+        onTap: (i) {
+          _setTab(i);
+          Navigator.pop(context);
+        },
+      ),
       body: IndexedStack(
         index: safeTab,
         children: _screens,
       ),
-      bottomNavigationBar: _FloatingPillNav(
-        currentIndex: safeTab,
-        items: _navItems,
-        onTap: _setTab,
-      ),
     );
   }
 }
 
-class _NavItem {
-  final IconData activeIcon;
-  final IconData inactiveIcon;
-  final String label;
-  const _NavItem(this.activeIcon, this.inactiveIcon, this.label);
-}
+// ── App drawer ─────────────────────────────────────────────────────────────────
 
-// ── Docked glass nav bar ───────────────────────────────────────────────────────
-
-class _FloatingPillNav extends StatelessWidget {
+class _AppDrawer extends StatelessWidget {
   final int currentIndex;
-  final List<_NavItem> items;
+  final dynamic user;
+  final bool isDark;
   final ValueChanged<int> onTap;
 
-  const _FloatingPillNav({
+  const _AppDrawer({
     required this.currentIndex,
-    required this.items,
+    required this.user,
+    required this.isDark,
     required this.onTap,
   });
 
+  static const _items = <_DrawerItem>[
+    _DrawerItem(Icons.home_rounded, Icons.home_outlined, 'Home'),
+    _DrawerItem(Icons.description_rounded, Icons.description_outlined, 'Documents'),
+    _DrawerItem(Icons.style_rounded, Icons.style_outlined, 'Flashcards'),
+    _DrawerItem(Icons.quiz_rounded, Icons.quiz_outlined, 'Quizzes'),
+    _DrawerItem(Icons.person_rounded, Icons.person_outline_rounded, 'Profile'),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final initial = (user?.username?.isNotEmpty == true)
+        ? (user!.username as String)[0].toUpperCase()
+        : '?';
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(28),
-        topRight: Radius.circular(28),
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          height: 66.h,
-          decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF1A1035).withValues(alpha: 0.95)
-                : Colors.white.withValues(alpha: 0.96),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(28),
-              topRight: Radius.circular(28),
-            ),
-            border: Border(
-              top: BorderSide(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : AppColors.border.withValues(alpha: 0.8),
-                width: 1.5,
+    return Drawer(
+      elevation: 0,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      child: Column(
+        children: [
+          // ── User profile card ──
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 8.h),
+              child: Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.white.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.darkBorder
+                        : AppColors.border.withValues(alpha: 0.7),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: isDark ? 0.20 : 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48.r,
+                      height: 48.r,
+                      decoration: BoxDecoration(
+                        gradient: AppGradients.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.40),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          initial,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.username ?? '',
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkText : AppColors.textPrimary,
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            user?.email ?? '',
+                            style: TextStyle(
+                              color: context.cTextSecondary,
+                              fontSize: 12.sp,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? AppColors.primary.withValues(alpha: 0.22)
-                    : Colors.black.withValues(alpha: 0.08),
-                blurRadius: 24,
-                offset: const Offset(0, -4),
-              ),
-            ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length, (i) {
-              final item = items[i];
-              final isActive = i == currentIndex;
-              return _PillNavItem(
-                icon: isActive ? item.activeIcon : item.inactiveIcon,
-                label: item.label,
-                isActive: isActive,
-                isDark: isDark,
-                onTap: () => onTap(i),
-              );
-            }),
+
+          // ── Section label ──
+          Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 8.h),
+            child: Row(
+              children: [
+                Text(
+                  'NAVIGATION',
+                  style: TextStyle(
+                    color: context.cTextTertiary,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+
+          // ── Nav items ──
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              itemCount: _items.length,
+              itemBuilder: (_, i) {
+                final item = _items[i];
+                final isActive = i == currentIndex;
+                return _DrawerNavTile(
+                  activeIcon: item.activeIcon,
+                  inactiveIcon: item.inactiveIcon,
+                  label: item.label,
+                  isActive: isActive,
+                  isDark: isDark,
+                  onTap: () => onTap(i),
+                );
+              },
+            ),
+          ),
+
+          // ── Divider ──
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Divider(color: context.cBorder),
+          ),
+
+          // ── Footer ──
+          Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 28.h),
+            child: Row(
+              children: [
+                ShaderMask(
+                  shaderCallback: (b) => AppGradients.primary.createShader(b),
+                  child: Icon(Icons.school_rounded,
+                      color: Colors.white, size: 20.r),
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'StudyBuddy',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14.sp,
+                    color: isDark ? AppColors.darkText : AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  'v1.0',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: context.cTextTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _PillNavItem extends StatelessWidget {
-  final IconData icon;
+class _DrawerItem {
+  final IconData activeIcon;
+  final IconData inactiveIcon;
+  final String label;
+  const _DrawerItem(this.activeIcon, this.inactiveIcon, this.label);
+}
+
+class _DrawerNavTile extends StatelessWidget {
+  final IconData activeIcon;
+  final IconData inactiveIcon;
   final String label;
   final bool isActive;
   final bool isDark;
   final VoidCallback onTap;
 
-  const _PillNavItem({
-    required this.icon,
+  const _DrawerNavTile({
+    required this.activeIcon,
+    required this.inactiveIcon,
     required this.label,
     required this.isActive,
     required this.isDark,
@@ -435,63 +563,67 @@ class _PillNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(
-          horizontal: isActive ? 16.w : 12.w,
-          vertical: 8.h,
-        ),
-        decoration: isActive
-            ? BoxDecoration(
-                gradient: AppGradients.primary,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.50),
-                    blurRadius: 18,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 3),
+    return Padding(
+      padding: EdgeInsets.only(bottom: 4.h),
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            gradient: isActive ? AppGradients.primary : null,
+            color: isActive
+                ? null
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.0)
+                    : Colors.transparent),
+            borderRadius: BorderRadius.circular(14.r),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.32),
+                      blurRadius: 18,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              // Icon with gradient container when active
+              if (isActive)
+                Icon(activeIcon, size: 22.r, color: Colors.white)
+              else
+                Icon(inactiveIcon, size: 22.r,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary),
+              SizedBox(width: 14.w),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: isActive
+                      ? Colors.white
+                      : (isDark ? AppColors.darkText : AppColors.textPrimary),
+                ),
+              ),
+              if (isActive) ...[
+                const Spacer(),
+                Container(
+                  width: 6.r,
+                  height: 6.r,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              )
-            : const BoxDecoration(),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 22.r,
-              color: isActive
-                  ? Colors.white
-                  : (isDark
-                      ? Colors.white.withValues(alpha: 0.32)
-                      : AppColors.textTertiary),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              child: isActive
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(width: 6.w),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

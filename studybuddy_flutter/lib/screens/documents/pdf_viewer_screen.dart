@@ -21,6 +21,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   String? _error;
   int _currentPage = 0;
   int _totalPages = 0;
+  double? _downloadProgress; // null = not started, 0-1 = in progress
+
+  // Session-level cache: URL → local file path
+  static final Map<String, String> _pathCache = {};
 
   static const _bg = Color(0xFF0F0F1A);
   static const _cardBg = Color(0xFF1A1A2E);
@@ -43,26 +47,62 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   Future<void> _downloadPdf() async {
+    setState(() {
+      _error = null;
+      _localPath = null;
+      _downloadProgress = null;
+    });
     try {
       final resolved = _resolvedUrl();
-      // Local file — use directly without downloading
+
+      // Local file — use directly
       if (resolved.startsWith('file://')) {
         final path = Uri.parse(resolved).toFilePath();
         if (mounted) setState(() => _localPath = path);
         return;
       }
+
+      // Check session cache first
+      final cached = _pathCache[resolved];
+      if (cached != null && File(cached).existsSync()) {
+        if (mounted) setState(() => _localPath = cached);
+        return;
+      }
+
       final uri = Uri.parse(resolved);
-      final response =
-          await http.get(uri).timeout(const Duration(seconds: 30));
+
+      // Try streaming download with Content-Length progress
+      final request = http.Request('GET', uri);
+      final response = await request
+          .send()
+          .timeout(const Duration(seconds: 120));
+
       if (response.statusCode != 200) {
         throw Exception('Download failed (${response.statusCode})');
       }
-      final dir = await getTemporaryDirectory();
-      final fileName = uri.pathSegments.last.isNotEmpty
-          ? uri.pathSegments.last
-          : 'document.pdf';
+
+      final contentLength = response.contentLength ?? 0;
+      final bytes = <int>[];
+
+      if (mounted) setState(() => _downloadProgress = 0.0);
+
+      await for (final chunk in response.stream) {
+        bytes.addAll(chunk);
+        if (contentLength > 0 && mounted) {
+          setState(() =>
+              _downloadProgress = (bytes.length / contentLength).clamp(0.0, 1.0));
+        }
+      }
+
+      final dir = await getApplicationDocumentsDirectory();
+      final fileName = uri.pathSegments.lastWhere(
+        (s) => s.isNotEmpty,
+        orElse: () => 'document.pdf',
+      );
       final file = File('${dir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes);
+      await file.writeAsBytes(bytes);
+
+      _pathCache[resolved] = file.path;
       if (mounted) setState(() => _localPath = file.path);
     } on Exception catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -106,8 +146,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 14),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
@@ -155,11 +194,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final progress = (_currentPage + 1) / _totalPages;
     return Container(
       height: 56,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: _cardBg,
-        border: const Border(
-          top: BorderSide(color: Colors.white12),
-        ),
+        border: Border(top: BorderSide(color: Colors.white12)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -179,8 +216,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.white12,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                    AppColors.primary),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppColors.primary),
                 minHeight: 6,
               ),
             ),
@@ -188,10 +225,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           const SizedBox(width: 8),
           Text(
             '$_totalPages',
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: Colors.white54, fontSize: 13),
           ),
         ],
       ),
@@ -231,18 +265,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: Colors.white38, fontSize: 12),
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _error = null;
-                    _localPath = null;
-                  });
-                  _downloadPdf();
-                },
+                onPressed: _downloadPdf,
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: const Text('Try Again'),
               ),
@@ -258,16 +285,16 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3)),
+                border:
+                    Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
               ),
               child: const Padding(
-                padding: EdgeInsets.all(18),
+                padding: EdgeInsets.all(20),
                 child: CircularProgressIndicator(
                   color: AppColors.primary,
                   strokeWidth: 3,
@@ -283,11 +310,33 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'Please wait',
-              style: TextStyle(color: Colors.white38, fontSize: 12),
-            ),
+            const SizedBox(height: 8),
+            if (_downloadProgress != null) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                width: 200,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _downloadProgress,
+                    backgroundColor: Colors.white12,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary),
+                    minHeight: 4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${(_downloadProgress! * 100).toStringAsFixed(0)}%',
+                style:
+                    const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ] else
+              const Text(
+                'Please wait',
+                style: TextStyle(color: Colors.white38, fontSize: 12),
+              ),
           ],
         ),
       );

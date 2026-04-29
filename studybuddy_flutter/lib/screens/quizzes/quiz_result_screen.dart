@@ -234,21 +234,60 @@ class QuizResultScreen extends StatelessWidget {
                     );
                   }),
                   const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: GradientButton(
-                      label: 'Retake Quiz',
-                      icon: Icons.refresh_rounded,
-                      gradient: AppGradients.rose,
-                      onPressed: () => Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => QuizTakeScreen(quiz: quiz),
+                  Builder(builder: (context) {
+                    final wrongQuestions = quiz.questions
+                        .where((q) => answers[q.id] != q.correctOptionId)
+                        .toList();
+                    final hasWrong = wrongQuestions.isNotEmpty;
+                    return Column(
+                      children: [
+                        if (hasWrong) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: GradientButton(
+                              label: 'Practice Wrong Answers (${wrongQuestions.length})',
+                              icon: Icons.refresh_rounded,
+                              gradient: AppGradients.rose,
+                              onPressed: () {
+                                final wrongQuiz = Quiz(
+                                  id: quiz.id,
+                                  documentId: quiz.documentId,
+                                  documentTitle: quiz.documentTitle,
+                                  title: quiz.title,
+                                  questions: wrongQuestions,
+                                  totalQuestions: wrongQuestions.length,
+                                  createdAt: quiz.createdAt,
+                                );
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        QuizTakeScreen(quiz: wrongQuiz),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: GradientButton(
+                            label: hasWrong ? 'Retake Full Quiz' : 'Retake Quiz',
+                            icon: Icons.replay_rounded,
+                            onPressed: () => Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => QuizTakeScreen(quiz: quiz),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
+                      ],
+                    );
+                  }),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -27,26 +28,29 @@ class DocumentDetailScreen extends StatefulWidget {
   State<DocumentDetailScreen> createState() => _DocumentDetailScreenState();
 }
 
-class _DocumentDetailScreenState extends State<DocumentDetailScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabs;
+class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
+  int _tab = 0;
+
+  static const _sections = <_DocSection>[
+    _DocSection(Icons.summarize_outlined, 'Summary'),
+    _DocSection(Icons.chat_outlined, 'Chat'),
+    _DocSection(Icons.style_outlined, 'Flashcards'),
+    _DocSection(Icons.quiz_outlined, 'Quizzes'),
+    _DocSection(Icons.lightbulb_outline_rounded, 'Concepts'),
+    _DocSection(Icons.edit_note_rounded, 'Notes'),
+    _DocSection(Icons.download_rounded, 'Download'),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 7, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await context.read<DocumentProvider>().loadDocument(widget.documentId);
-      if (!mounted) return;
-      await context.read<DocumentProvider>().loadChatHistory(widget.documentId);
+      await Future.wait([
+        context.read<DocumentProvider>().loadDocument(widget.documentId),
+        context.read<DocumentProvider>().loadChatHistory(widget.documentId),
+      ]);
     });
-  }
-
-  @override
-  void dispose() {
-    _tabs.dispose();
-    super.dispose();
   }
 
   void _openPdf(String fileUrl, String title) {
@@ -76,6 +80,8 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen>
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -95,33 +101,29 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen>
               onPressed: () => _openPdf(doc.fileUrl!, doc.title),
             ),
           StatusBadge(status: doc.status),
-          const SizedBox(width: 16),
-        ],
-        bottom: TabBar(
-          controller: _tabs,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: context.cTextSecondary,
-          indicatorColor: AppColors.primary,
-          indicatorWeight: 2,
-          labelStyle: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+          const SizedBox(width: 4),
+          Builder(
+            builder: (context) => IconButton(
+              tooltip: 'Sections',
+              icon: const Icon(Icons.menu_book_rounded),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
           ),
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          tabs: const [
-            Tab(text: 'Summary'),
-            Tab(text: 'Chat'),
-            Tab(text: 'Flashcards'),
-            Tab(text: 'Quizzes'),
-            Tab(text: 'Concepts'),
-            Tab(text: 'Notes'),
-            Tab(text: 'Download'),
-          ],
-        ),
+          const SizedBox(width: 4),
+        ],
       ),
-      body: TabBarView(
-        controller: _tabs,
+      endDrawer: _DocSectionsDrawer(
+        sections: _sections,
+        currentIndex: _tab,
+        docTitle: doc.title,
+        isDark: isDark,
+        onTap: (i) {
+          setState(() => _tab = i);
+          Navigator.pop(context);
+        },
+      ),
+      body: IndexedStack(
+        index: _tab,
         children: [
           _SummaryTab(documentId: widget.documentId),
           _ChatTab(documentId: widget.documentId),
@@ -130,6 +132,152 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen>
           _ConceptsTab(documentId: widget.documentId, docReady: doc.isReady),
           _NotesTab(documentId: widget.documentId),
           _DownloadTab(fileUrl: doc.fileUrl, title: doc.title),
+        ],
+      ),
+    );
+  }
+}
+
+class _DocSection {
+  final IconData icon;
+  final String label;
+  const _DocSection(this.icon, this.label);
+}
+
+// ── Document sections drawer ───────────────────────────────────────────────────
+
+class _DocSectionsDrawer extends StatelessWidget {
+  final List<_DocSection> sections;
+  final int currentIndex;
+  final String docTitle;
+  final bool isDark;
+  final ValueChanged<int> onTap;
+
+  const _DocSectionsDrawer({
+    required this.sections,
+    required this.currentIndex,
+    required this.docTitle,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.background,
+      child: Column(
+        children: [
+          // Header
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(20.w, 56.h, 20.w, 20.h),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.black.withValues(alpha: 0.03),
+              border: Border(
+                bottom: BorderSide(color: context.cBorder),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Text(
+                    'Sections',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  docTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // Section items
+          Expanded(
+            child: ListView.builder(
+              padding:
+                  EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+              itemCount: sections.length,
+              itemBuilder: (_, i) {
+                final s = sections[i];
+                final isActive = i == currentIndex;
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 4.h),
+                  child: GestureDetector(
+                    onTap: () => onTap(i),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 16.w, vertical: 13.h),
+                      decoration: BoxDecoration(
+                        gradient: isActive ? AppGradients.primary : null,
+                        color: isActive
+                            ? null
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.0)
+                                : Colors.transparent),
+                        borderRadius: BorderRadius.circular(14.r),
+                        boxShadow: isActive
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primary
+                                      .withValues(alpha: 0.28),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            s.icon,
+                            size: 20.r,
+                            color: isActive
+                                ? Colors.white
+                                : context.cTextSecondary,
+                          ),
+                          SizedBox(width: 14.w),
+                          Text(
+                            s.label,
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: isActive
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isActive
+                                  ? Colors.white
+                                  : context.cTextPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -491,9 +639,19 @@ class _FlashcardsTabState extends State<_FlashcardsTab>
   }
 
   Future<void> _generate() async {
-    final result =
-        await context.read<FlashcardProvider>().generate(widget.documentId);
-    if (result == null && mounted) {
+    final count = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _FlashcardGenerateSheet(),
+    );
+    if (count == null || !mounted) return;
+
+    final result = await context
+        .read<FlashcardProvider>()
+        .generate(widget.documentId, numCards: count);
+    if (!mounted) return;
+    if (result == null) {
       final err = context.read<FlashcardProvider>().error;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1161,6 +1319,132 @@ class _QuizGenerateSheetState extends State<_QuizGenerateSheet> {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context, _selected),
               child: Text('Generate $_selected Questions'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Flashcard Generate Sheet ──────────────────────────────────────────────────
+
+class _FlashcardGenerateSheet extends StatefulWidget {
+  const _FlashcardGenerateSheet();
+
+  @override
+  State<_FlashcardGenerateSheet> createState() =>
+      _FlashcardGenerateSheetState();
+}
+
+class _FlashcardGenerateSheetState extends State<_FlashcardGenerateSheet> {
+  int _selected = 20;
+
+  static const _options = [10, 20, 30, 40];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.cSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        12,
+        24,
+        24 + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: context.cBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Text(
+            'Generate Flashcards',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'How many flashcards do you want?',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: context.cTextSecondary,
+                ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: _options.map((n) {
+              final selected = n == _selected;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                      right: n != _options.last ? 10 : 0),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selected = n),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.primary
+                            : context.cSurfaceVariant,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected
+                              ? AppColors.primary
+                              : context.cBorder,
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            '$n',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  color: selected
+                                      ? Colors.white
+                                      : context.cTextPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                          Text(
+                            'Cards',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: selected
+                                      ? Colors.white70
+                                      : context.cTextSecondary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context, _selected),
+              child: Text('Generate $_selected Cards'),
             ),
           ),
         ],
