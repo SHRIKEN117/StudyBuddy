@@ -46,15 +46,27 @@ class FlashcardSet {
   });
 
   factory FlashcardSet.fromJson(Map<String, dynamic> json) {
-    final cardsJson = json['flashcards'] as List<dynamic>? ?? [];
+    // Backend sends 'cards'; fall back to 'flashcards' for forward-compat
+    final cardsJson =
+        json['cards'] as List<dynamic>? ?? json['flashcards'] as List<dynamic>? ?? [];
+
+    // Backend stores document ref as 'document' (ObjectId or populated obj)
+    // Also handle 'documentId' as a fallback
+    final docField = json['document'] ?? json['documentId'];
+    final String docId;
+    final String docTitle;
+    if (docField is Map<String, dynamic>) {
+      docId = docField['_id'] as String? ?? docField['id'] as String? ?? '';
+      docTitle = docField['title'] as String? ?? '';
+    } else {
+      docId = docField as String? ?? '';
+      docTitle = json['documentTitle'] as String? ?? '';
+    }
+
     return FlashcardSet(
       id: json['_id'] as String? ?? json['id'] as String,
-      documentId: (json['document'] is Map)
-          ? (json['document'] as Map<String, dynamic>)['_id'] as String
-          : json['document'] as String,
-      documentTitle: (json['document'] is Map)
-          ? (json['document'] as Map<String, dynamic>)['title'] as String? ?? ''
-          : json['documentTitle'] as String? ?? '',
+      documentId: docId,
+      documentTitle: docTitle,
       totalCards: json['totalCards'] as int? ?? cardsJson.length,
       flashcards: cardsJson
           .map((c) => Flashcard.fromJson(c as Map<String, dynamic>))

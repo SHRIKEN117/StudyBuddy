@@ -5,22 +5,30 @@ import '../../core/theme/app_theme.dart';
 import '../../core/services/api_service.dart';
 import '../../core/constants/api_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/app_widgets.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final ValueChanged<int>? onTabTap;
+  const DashboardScreen({super.key, this.onTabTap});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  Map<String, dynamic>? _stats;
+  Map<String, dynamic>? _data;
   bool _loading = true;
+
+  Map<String, dynamic> get _overview =>
+      _data?['overview'] as Map<String, dynamic>? ?? {};
+
+  Map<String, dynamic> get _recentActivity =>
+      _data?['recentActivity'] as Map<String, dynamic>? ?? {};
 
   @override
   void initState() {
     super.initState();
-    _loadDashboard();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDashboard());
   }
 
   Future<void> _loadDashboard() async {
@@ -28,7 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final res = await ApiService.get(ApiConstants.dashboard);
       setState(() {
-        _stats = res['data'] as Map<String, dynamic>?;
+        _data = res['data'] as Map<String, dynamic>?;
         _loading = false;
       });
     } on ApiException {
@@ -46,8 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
-    final now = DateTime.now();
-    final dateStr = DateFormat('EEEE, MMMM d').format(now);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -56,30 +63,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border(
-                    bottom: BorderSide(color: AppColors.border),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${_greeting()}, ${user?.username ?? ''}',
-                      style: Theme.of(context).textTheme.displayMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dateStr,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                    ),
-                  ],
-                ),
+              child: _DashboardHeader(
+                greeting: _greeting(),
+                username: user?.username ?? '',
+                isDark: isDark,
               ),
             ),
             if (_loading)
@@ -90,13 +77,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    _StatGrid(stats: _stats),
+                    _StatGrid(
+                      overview: _overview,
+                      onTabTap: widget.onTabTap,
+                    ),
                     const SizedBox(height: 28),
-                    _RecentActivity(stats: _stats),
-                    const SizedBox(height: 100),
+                    _RecentActivity(recentActivity: _recentActivity),
+                    const SizedBox(height: 20),
                   ]),
                 ),
               ),
@@ -107,105 +97,124 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-class _StatGrid extends StatelessWidget {
-  final Map<String, dynamic>? stats;
-  const _StatGrid({this.stats});
+// ── Gradient mesh header ───────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    final documents = stats?['totalDocuments'] as int? ?? 0;
-    final flashcards = stats?['totalFlashcards'] as int? ?? 0;
-    final quizzes = stats?['totalQuizzes'] as int? ?? 0;
-    final avgScore = (stats?['averageQuizScore'] as num?)?.toDouble() ?? 0.0;
+class _DashboardHeader extends StatelessWidget {
+  final String greeting;
+  final String username;
+  final bool isDark;
 
-    final items = [
-      _StatItem(
-        icon: Icons.description_outlined,
-        label: 'Documents',
-        value: '$documents',
-        color: AppColors.primary,
-      ),
-      _StatItem(
-        icon: Icons.style_outlined,
-        label: 'Flashcards',
-        value: '$flashcards',
-        color: const Color(0xFF7C3AED),
-      ),
-      _StatItem(
-        icon: Icons.quiz_outlined,
-        label: 'Quizzes',
-        value: '$quizzes',
-        color: AppColors.accent,
-      ),
-      _StatItem(
-        icon: Icons.bar_chart_rounded,
-        label: 'Avg Score',
-        value: '${avgScore.toStringAsFixed(0)}%',
-        color: AppColors.success,
-      ),
-    ];
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.5,
-      children: items,
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
+  const _DashboardHeader({
+    required this.greeting,
+    required this.username,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final dateStr = DateFormat('EEEE, MMMM d').format(DateTime.now());
+
+    return SizedBox(
+      height: 210,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
+          // Background base
+          Positioned.fill(
+            child: Container(
+              color: isDark ? AppColors.darkBackground : AppColors.background,
             ),
-            child: Icon(icon, size: 18, color: color),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+          // Radial purple blob — top right
+          Positioned(
+            top: -50, right: -30,
+            child: Container(
+              width: 220, height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primary.withValues(alpha: isDark ? 0.38 : 0.22),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Radial pink blob — mid left
+          Positioned(
+            top: 70, left: -40,
+            child: Container(
+              width: 200, height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.accent.withValues(alpha: isDark ? 0.25 : 0.12),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Radial lavender blob — bottom center
+          Positioned(
+            bottom: -30, right: 80,
+            child: Container(
+              width: 140, height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primaryLight.withValues(alpha: isDark ? 0.18 : 0.10),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Content
+          Positioned(
+            left: 0, right: 0, bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Date pill badge
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.30),
+                        width: 1,
+                      ),
                     ),
+                    child: Text(
+                      dateStr,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '$greeting, ${username.isNotEmpty ? username : 'there'} 👋',
+                    style: Theme.of(context)
+                        .textTheme
+                        .displayMedium
+                        ?.copyWith(height: 1.2),
+                  ),
+                ],
               ),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -213,99 +222,163 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _RecentActivity extends StatelessWidget {
-  final Map<String, dynamic>? stats;
-  const _RecentActivity({this.stats});
+// ── Stats grid ─────────────────────────────────────────────────────────────────
+
+class _StatGrid extends StatelessWidget {
+  final Map<String, dynamic> overview;
+  final ValueChanged<int>? onTabTap;
+  const _StatGrid({required this.overview, this.onTabTap});
 
   @override
   Widget build(BuildContext context) {
-    final recent = stats?['recentActivity'] as List<dynamic>? ?? [];
+    final docs = overview['totalDocuments'] as int? ?? 0;
+    final cards = overview['totalFlashcards'] as int? ?? 0;
+    final quizzes = overview['totalQuizzes'] as int? ?? 0;
+    final avg = (overview['averageScore'] as num?)?.toDouble() ?? 0.0;
+
+    // tabIndex: 1=Docs, 2=Cards, 3=Quizzes
+    final stats = [
+      _StatData('Documents', '$docs', Icons.description_rounded, AppGradients.violet, 1),
+      _StatData('Flashcards', '$cards', Icons.style_rounded, AppGradients.primary, 2),
+      _StatData('Quizzes', '$quizzes', Icons.quiz_rounded, AppGradients.rose, 3),
+      _StatData('Avg Score', '${avg.toStringAsFixed(0)}%', Icons.bar_chart_rounded, AppGradients.emerald, 3),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recent Activity',
-          style: Theme.of(context).textTheme.headlineSmall,
+          'Overview',
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 12),
-        if (recent.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
-            ),
-            child: const Center(
-              child: Text(
-                'No recent activity yet',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ),
-          )
-        else
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: recent.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, i) {
-                final item = recent[i] as Map<String, dynamic>;
-                final type = item['type'] as String? ?? '';
-                final title = item['title'] as String? ?? '';
-                final time = item['createdAt'] as String?;
-                return ListTile(
-                  leading: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      _iconForType(type),
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  title: Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: time != null
-                      ? Text(
-                          _formatTime(time),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        )
-                      : null,
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: AppColors.textTertiary,
-                  ),
-                );
-              },
-            ),
+        const SizedBox(height: 14),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.65,
           ),
+          itemCount: stats.length,
+          itemBuilder: (_, i) => _StatCard(
+            data: stats[i],
+            onTap: onTabTap != null ? () => onTabTap!(stats[i].tabIndex) : null,
+          ),
+        ),
       ],
     );
   }
+}
 
-  IconData _iconForType(String type) {
-    switch (type.toLowerCase()) {
-      case 'document':
-        return Icons.description_outlined;
-      case 'quiz':
-        return Icons.quiz_outlined;
-      case 'flashcard':
-        return Icons.style_outlined;
-      default:
-        return Icons.access_time_rounded;
+class _StatData {
+  final String label;
+  final String value;
+  final IconData icon;
+  final LinearGradient gradient;
+  final int tabIndex;
+  const _StatData(this.label, this.value, this.icon, this.gradient, this.tabIndex);
+}
+
+class _StatCard extends StatelessWidget {
+  final _StatData data;
+  final VoidCallback? onTap;
+  const _StatCard({required this.data, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      glowColor: data.gradient.colors.first,
+      padding: const EdgeInsets.all(14),
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Row(
+        children: [
+          GradientIcon(
+            icon: data.icon,
+            gradient: data.gradient,
+            size: 42,
+            iconSize: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    data.value,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ),
+                Text(
+                  data.label,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Recent activity ────────────────────────────────────────────────────────────
+
+class _RecentActivity extends StatelessWidget {
+  final Map<String, dynamic> recentActivity;
+  const _RecentActivity({required this.recentActivity});
+
+  List<_ActivityItem> _buildItems() {
+    final docs = recentActivity['documents'] as List<dynamic>? ?? [];
+    final quizzes = recentActivity['quizzes'] as List<dynamic>? ?? [];
+    final items = <_ActivityItem>[];
+
+    for (final d in docs) {
+      final m = d as Map<String, dynamic>;
+      items.add(_ActivityItem(
+        type: 'document',
+        title: m['title'] as String? ?? m['fileName'] as String? ?? 'Document',
+        time: m['lastAccessedAt'] as String? ?? m['createdAt'] as String?,
+      ));
     }
+
+    for (final q in quizzes) {
+      final m = q as Map<String, dynamic>;
+      final docTitle = (m['documentId'] is Map)
+          ? (m['documentId'] as Map<String, dynamic>)['title'] as String? ?? ''
+          : '';
+      items.add(_ActivityItem(
+        type: 'quiz',
+        title: m['title'] as String? ??
+            (docTitle.isNotEmpty ? 'Quiz: $docTitle' : 'Quiz'),
+        time: m['completedAt'] as String? ?? m['createdAt'] as String?,
+      ));
+    }
+
+    items.sort((a, b) {
+      final ta = a.time != null ? DateTime.tryParse(a.time!) : null;
+      final tb = b.time != null ? DateTime.tryParse(b.time!) : null;
+      if (ta == null && tb == null) return 0;
+      if (ta == null) return 1;
+      if (tb == null) return -1;
+      return tb.compareTo(ta);
+    });
+
+    return items;
   }
 
   String _formatTime(String iso) {
@@ -316,4 +389,145 @@ class _RecentActivity extends StatelessWidget {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _buildItems();
+    final visible = items.take(6).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Recent Activity',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            if (items.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  gradient: AppGradients.primary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${items.length}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 14),
+        GlassCard(
+          padding: EdgeInsets.zero,
+          borderRadius: BorderRadius.circular(18),
+          child: visible.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(28),
+                  child: Column(
+                    children: [
+                      GradientIcon(
+                        icon: Icons.history_rounded,
+                        gradient: AppGradients.violet,
+                        size: 52,
+                        iconSize: 26,
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'No recent activity yet',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Upload a document to get started',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
+                  children: List.generate(visible.length, (i) {
+                    final item = visible[i];
+                    final isDoc = item.type == 'document';
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 13),
+                          child: Row(
+                            children: [
+                              GradientIcon(
+                                icon: isDoc
+                                    ? Icons.description_rounded
+                                    : Icons.quiz_rounded,
+                                gradient: isDoc
+                                    ? AppGradients.violet
+                                    : AppGradients.rose,
+                                size: 36,
+                                iconSize: 18,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.title,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (item.time != null)
+                                      Text(
+                                        _formatTime(item.time!),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 12,
+                                color: context.cTextTertiary,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (i < visible.length - 1)
+                          Divider(
+                            height: 1,
+                            indent: 16,
+                            endIndent: 16,
+                            color: context.cBorder.withValues(alpha: 0.5),
+                          ),
+                      ],
+                    );
+                  }),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActivityItem {
+  final String type;
+  final String title;
+  final String? time;
+  const _ActivityItem({required this.type, required this.title, this.time});
 }

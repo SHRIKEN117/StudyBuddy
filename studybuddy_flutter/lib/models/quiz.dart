@@ -4,10 +4,16 @@ class QuizOption {
 
   const QuizOption({required this.id, required this.text});
 
-  factory QuizOption.fromJson(Map<String, dynamic> json) => QuizOption(
-        id: json['_id'] as String? ?? json['id'] as String? ?? '',
-        text: json['text'] as String,
-      );
+  // Backend sends options as plain strings; handle both String and Map forms
+  factory QuizOption.fromValue(dynamic value) {
+    if (value is String) {
+      return QuizOption(id: value, text: value);
+    }
+    final json = value as Map<String, dynamic>;
+    final text = json['text'] as String? ?? json['_id'] as String? ?? '';
+    final id = json['_id'] as String? ?? json['id'] as String? ?? text;
+    return QuizOption(id: id, text: text);
+  }
 }
 
 class QuizQuestion {
@@ -25,25 +31,20 @@ class QuizQuestion {
     this.explanation,
   });
 
-  factory QuizQuestion.fromJson(Map<String, dynamic> json) {
+  // index is the 0-based position; used as question id for submit payloads
+  factory QuizQuestion.fromJson(Map<String, dynamic> json, int index) {
     final opts = (json['options'] as List<dynamic>? ?? [])
-        .map((o) => QuizOption.fromJson(o as Map<String, dynamic>))
+        .map(QuizOption.fromValue)
         .toList();
 
-    // correctAnswer may be an object with _id or a plain id string
-    String correctId = '';
-    final ca = json['correctAnswer'];
-    if (ca is Map) {
-      correctId = ca['_id'] as String? ?? ca['id'] as String? ?? '';
-    } else if (ca is String) {
-      correctId = ca;
-    }
+    // correctAnswer is a plain string (option text)
+    final correctAnswer = json['correctAnswer'] as String? ?? '';
 
     return QuizQuestion(
-      id: json['_id'] as String? ?? json['id'] as String? ?? '',
+      id: index.toString(),
       question: json['question'] as String,
       options: opts,
-      correctOptionId: correctId,
+      correctOptionId: correctAnswer,
       explanation: json['explanation'] as String?,
     );
   }
@@ -57,6 +58,8 @@ class Quiz {
   final List<QuizQuestion> questions;
   final int totalQuestions;
   final DateTime? createdAt;
+  final DateTime? completedAt;
+  final int? score; // percentage 0-100
 
   const Quiz({
     required this.id,
@@ -66,27 +69,45 @@ class Quiz {
     required this.questions,
     required this.totalQuestions,
     this.createdAt,
+    this.completedAt,
+    this.score,
   });
 
+  bool get isCompleted => completedAt != null;
+
   factory Quiz.fromJson(Map<String, dynamic> json) {
-    final qs = (json['questions'] as List<dynamic>? ?? [])
-        .map((q) => QuizQuestion.fromJson(q as Map<String, dynamic>))
+    final questionsJson = json['questions'] as List<dynamic>? ?? [];
+    final qs = questionsJson
+        .asMap()
+        .entries
+        .map((e) => QuizQuestion.fromJson(e.value as Map<String, dynamic>, e.key))
         .toList();
+
+    final docField = json['document'] ?? json['documentId'];
+    final String docId;
+    final String docTitle;
+    if (docField is Map<String, dynamic>) {
+      docId = docField['_id'] as String? ?? docField['id'] as String? ?? '';
+      docTitle = docField['title'] as String? ?? '';
+    } else {
+      docId = docField as String? ?? '';
+      docTitle = '';
+    }
 
     return Quiz(
       id: json['_id'] as String? ?? json['id'] as String,
-      documentId: (json['document'] is Map)
-          ? (json['document'] as Map<String, dynamic>)['_id'] as String
-          : json['document'] as String? ?? '',
-      documentTitle: (json['document'] is Map)
-          ? (json['document'] as Map<String, dynamic>)['title'] as String? ?? ''
-          : '',
+      documentId: docId,
+      documentTitle: docTitle,
       title: json['title'] as String? ?? 'Quiz',
       questions: qs,
       totalQuestions: json['totalQuestions'] as int? ?? qs.length,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String)
           : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'] as String)
+          : null,
+      score: json['score'] as int?,
     );
   }
 }
@@ -105,12 +126,18 @@ class QuizResult {
   });
 
   factory QuizResult.fromJson(Map<String, dynamic> json) {
-    final result = json['result'] as Map<String, dynamic>? ?? json;
+    // Full API response shape: {success, data: {score, totalQuestions, percentage, userAnswers}}
+    final data = json['data'] as Map<String, dynamic>? ??
+        json['result'] as Map<String, dynamic>? ??
+        json;
     return QuizResult(
-      score: result['score'] as int? ?? 0,
-      totalQuestions: result['totalQuestions'] as int? ?? 0,
-      percentage: (result['percentage'] as num?)?.toDouble() ?? 0.0,
-      answers: (result['answers'] as List<dynamic>? ?? [])
+      // Backend 'score' = percentage (0-100); 'correctCount' = number correct
+      score: data['correctCount'] as int? ?? data['score'] as int? ?? 0,
+      totalQuestions: data['totalQuestions'] as int? ?? 0,
+      percentage: (data['percentage'] as num?)?.toDouble() ?? 0.0,
+      answers: (data['userAnswers'] as List<dynamic>? ??
+              data['answers'] as List<dynamic>? ??
+              [])
           .map((a) => Map<String, dynamic>.from(a as Map))
           .toList(),
     );

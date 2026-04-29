@@ -26,6 +26,7 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<FlashcardProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -34,14 +35,7 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
-                color: AppColors.surface,
-                child: Text(
-                  'Flashcards',
-                  style: Theme.of(context).textTheme.displayMedium,
-                ),
-              ),
+              child: _FlashcardsHeader(isDark: isDark),
             ),
             if (provider.loading)
               const SliverFillRemaining(
@@ -58,7 +52,7 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => Padding(
@@ -78,8 +72,7 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
                             context: context,
                             builder: (_) => AlertDialog(
                               title: const Text('Delete Flashcard Set'),
-                              content:
-                                  const Text('This cannot be undone.'),
+                              content: const Text('This cannot be undone.'),
                               actions: [
                                 TextButton(
                                     onPressed: () =>
@@ -95,7 +88,7 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
                               ],
                             ),
                           );
-                          if (confirmed == true && mounted) {
+                          if (confirmed == true && context.mounted) {
                             context
                                 .read<FlashcardProvider>()
                                 .deleteSet(provider.sets[i].id);
@@ -107,12 +100,111 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
                   ),
                 ),
               ),
+            const SliverToBoxAdapter(child: SizedBox(height: 140)),
           ],
         ),
       ),
     );
   }
 }
+
+// ── Gradient mesh header ───────────────────────────────────────────────────────
+
+class _FlashcardsHeader extends StatelessWidget {
+  final bool isDark;
+  const _FlashcardsHeader({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 180,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Container(
+              color: isDark ? AppColors.darkBackground : AppColors.background,
+            ),
+          ),
+          Positioned(
+            top: -30, right: -10,
+            child: Container(
+              width: 180, height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primary.withValues(alpha: isDark ? 0.32 : 0.18),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 50, left: -40,
+            child: Container(
+              width: 160, height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primaryLight
+                        .withValues(alpha: isDark ? 0.22 : 0.12),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0, right: 0, bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.30),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Text(
+                      'Study Mode',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Flashcards',
+                    style: Theme.of(context)
+                        .textTheme
+                        .displayMedium
+                        ?.copyWith(height: 1.2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Flashcard set card ─────────────────────────────────────────────────────────
 
 class _FlashcardSetCard extends StatelessWidget {
   final FlashcardSet set;
@@ -127,27 +219,17 @@ class _FlashcardSetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
+      glowColor: AppColors.primary,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
-      ),
+      borderRadius: BorderRadius.circular(18),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.style_outlined,
-              color: AppColors.primary,
-              size: 22,
-            ),
+          GradientIcon(
+            icon: Icons.style_rounded,
+            gradient: AppGradients.primary,
+            size: 48,
+            iconSize: 22,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -160,32 +242,84 @@ class _FlashcardSetCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${set.totalCards} cards${set.createdAt != null ? ' · ${DateFormat('MMM d').format(set.createdAt!)}' : ''}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${set.totalCards} cards',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    if (set.createdAt != null) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        DateFormat('MMM d').format(set.createdAt!),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          ElevatedButton(onPressed: onStudy, child: const Text('Study')),
+          GestureDetector(
+            onTap: onStudy,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: AppGradients.primary,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.40),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Text(
+                'Study',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
           PopupMenuButton<String>(
-            onSelected: (v) { if (v == 'delete') onDelete(); },
+            onSelected: (v) {
+              if (v == 'delete') onDelete();
+            },
             itemBuilder: (_) => [
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'delete',
                 child: Row(
-                  children: const [
-                    Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                  children: [
+                    Icon(Icons.delete_outline,
+                        size: 18, color: AppColors.error),
                     SizedBox(width: 8),
-                    Text('Delete', style: TextStyle(color: AppColors.error)),
+                    Text('Delete',
+                        style: TextStyle(color: AppColors.error)),
                   ],
                 ),
               ),
             ],
-            icon: const Icon(Icons.more_vert_rounded,
-                color: AppColors.textSecondary, size: 18),
+            icon: Icon(Icons.more_vert_rounded,
+                color: context.cTextSecondary, size: 18),
           ),
         ],
       ),

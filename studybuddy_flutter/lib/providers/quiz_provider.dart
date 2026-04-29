@@ -25,6 +25,25 @@ class QuizProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadAllQuizzes() async {
+    _setLoading(true);
+    _error = null;
+    _quizzes = [];
+    try {
+      final res = await ApiService.get(ApiConstants.quizzes);
+      final data = res['data'];
+      if (data is List) {
+        _quizzes = data
+            .map((q) => Quiz.fromJson(q as Map<String, dynamic>))
+            .toList();
+      }
+    } on Object catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<void> loadQuizzesForDocument(String documentId) async {
     _setLoading(true);
     _error = null;
@@ -37,8 +56,8 @@ class QuizProvider extends ChangeNotifier {
             .map((q) => Quiz.fromJson(q as Map<String, dynamic>))
             .toList();
       }
-    } on ApiException catch (e) {
-      _error = e.message;
+    } on Object catch (e) {
+      _error = e.toString();
     } finally {
       _setLoading(false);
     }
@@ -51,21 +70,21 @@ class QuizProvider extends ChangeNotifier {
     try {
       final res = await ApiService.get('/quizzes/quiz/$quizId');
       _current = Quiz.fromJson(res['data'] as Map<String, dynamic>);
-    } on ApiException catch (e) {
-      _error = e.message;
+    } on Object catch (e) {
+      _error = e.toString();
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<Quiz?> generate(String documentId) async {
+  Future<Quiz?> generate(String documentId, {int numQuestions = 10}) async {
     _generating = true;
     _error = null;
     notifyListeners();
     try {
       final res = await ApiService.post(
         ApiConstants.generateQuiz,
-        {'documentId': documentId},
+        {'documentId': documentId, 'numQuestions': numQuestions},
       );
       final data = res['data'];
       Quiz? quiz;
@@ -77,8 +96,8 @@ class QuizProvider extends ChangeNotifier {
         _current = quiz;
       }
       return quiz;
-    } on ApiException catch (e) {
-      _error = e.message;
+    } on Object catch (e) {
+      _error = e.toString();
       return null;
     } finally {
       _generating = false;
@@ -94,8 +113,13 @@ class QuizProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
+      // Backend expects {questionIndex: int, selectedAnswer: String}
+      // Question ids are stored as their 0-based index strings
       final formattedAnswers = answers.entries
-          .map((e) => {'questionId': e.key, 'selectedOptionId': e.value})
+          .map((e) => {
+                'questionIndex': int.tryParse(e.key) ?? 0,
+                'selectedAnswer': e.value,
+              })
           .toList();
       final res = await ApiService.post(
         '/quizzes/$quizId/submit',
@@ -103,12 +127,48 @@ class QuizProvider extends ChangeNotifier {
       );
       _lastResult = QuizResult.fromJson(res);
       return _lastResult;
-    } on ApiException catch (e) {
-      _error = e.message;
+    } on Object catch (e) {
+      _error = e.toString();
       return null;
     } finally {
       _submitting = false;
       notifyListeners();
+    }
+  }
+
+  Future<Map<String, String>?> loadQuizAnswers(String quizId) async {
+    _error = null;
+    try {
+      final res = await ApiService.get('/quizzes/$quizId/results');
+      final data = res['data'] as Map<String, dynamic>?;
+      if (data == null) return null;
+
+      final results = data['results'] as List<dynamic>? ?? [];
+      final answers = <String, String>{};
+      for (final r in results) {
+        final map = r as Map<String, dynamic>;
+        final idx = map['questionIndex'] as int? ?? 0;
+        final selected = map['selectedAnswer'] as String? ?? '';
+        answers[idx.toString()] = selected;
+      }
+
+      final quizData = data['quiz'] as Map<String, dynamic>?;
+      final percentage = (quizData?['score'] as num?)?.toDouble() ?? 0.0;
+      final total = quizData?['totalQuestions'] as int? ?? results.length;
+      final correctCount =
+          results.where((r) => (r as Map)['isCorrect'] == true).length;
+      _lastResult = QuizResult(
+        score: correctCount,
+        totalQuestions: total,
+        percentage: percentage,
+        answers: results
+            .map((r) => Map<String, dynamic>.from(r as Map))
+            .toList(),
+      );
+      return answers;
+    } on Object catch (e) {
+      _error = e.toString();
+      return null;
     }
   }
 
@@ -118,8 +178,8 @@ class QuizProvider extends ChangeNotifier {
       _quizzes = _quizzes.where((q) => q.id != id).toList();
       notifyListeners();
       return true;
-    } on ApiException catch (e) {
-      _error = e.message;
+    } on Object catch (e) {
+      _error = e.toString();
       notifyListeners();
       return false;
     }

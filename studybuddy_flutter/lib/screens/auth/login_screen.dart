@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_widgets.dart';
@@ -17,6 +18,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _showPassword = false;
+  bool _submitting = false;
+  String? _inlineError;
+
+  static final _emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
 
   @override
   void dispose() {
@@ -25,118 +32,282 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    final auth = context.read<AuthProvider>();
-    final ok = await auth.login(_email.text.trim(), _password.text);
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.error ?? 'Login failed'),
-          backgroundColor: AppColors.error,
+  Future<void> _showServerDialog(BuildContext ctx) async {
+    final ctrl = TextEditingController(text: ApiService.baseUrl);
+    await showDialog<void>(
+      context: ctx,
+      builder: (_) => AlertDialog(
+        title: const Text('Server URL'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter your backend URL (e.g. http://192.168.1.10:8000/api)',
+              style: Theme.of(ctx).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                hintText: 'http://192.168.x.x:8000/api',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
         ),
-      );
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final url = ctrl.text.trim();
+              if (url.isNotEmpty) await ApiService.setBaseUrl(url);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() => _inlineError = null);
+    if (!_formKey.currentState!.validate()) return;
+    if (_submitting) return;
+
+    setState(() => _submitting = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      final ok = await auth.login(_email.text.trim(), _password.text);
+      if (!mounted) return;
+      if (!ok) {
+        setState(() {
+          _inlineError =
+              auth.error ?? 'Incorrect email or password. Please try again.';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final loading = context.watch<AuthProvider>().loading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 48),
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryDark],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(Icons.school_rounded, color: Colors.white, size: 28),
+      body: Stack(
+        children: [
+          // Background blobs
+          Positioned(
+            top: -80, right: -60,
+            child: Container(
+              width: 300, height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primary.withValues(alpha: isDark ? 0.35 : 0.20),
+                    Colors.transparent,
+                  ],
                 ),
-                const SizedBox(height: 32),
-                Text(
-                  'Welcome back',
-                  style: Theme.of(context).textTheme.displayMedium,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 60, left: -80,
+            child: Container(
+              width: 260, height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.accent.withValues(alpha: isDark ? 0.28 : 0.14),
+                    Colors.transparent,
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sign in to continue learning',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                ),
-                const SizedBox(height: 40),
-                AppTextField(
-                  label: 'Email',
-                  hint: 'you@example.com',
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) =>
-                      (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Password',
-                  controller: _password,
-                  obscure: !_showPassword,
-                  suffix: IconButton(
-                    icon: Icon(
-                      _showPassword ? Icons.visibility_off : Icons.visibility,
-                      color: AppColors.textSecondary,
-                    ),
-                    onPressed: () => setState(() => _showPassword = !_showPassword),
-                  ),
-                  validator: (v) =>
-                      (v == null || v.length < 6) ? 'Password too short' : null,
-                ),
-                const SizedBox(height: 28),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: AppButton(
-                    label: 'Sign In',
-                    onPressed: _submit,
-                    loading: loading,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              ),
+            ),
+          ),
+          // Content
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const SizedBox(height: 56),
+                    // Logo
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        gradient: AppGradients.primary,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.50),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.school_rounded,
+                          color: Colors.white, size: 30),
+                    ),
+                    const SizedBox(height: 36),
                     Text(
-                      "Don't have an account? ",
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
+                      'Welcome back',
+                      style: Theme.of(context).textTheme.displayMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sign in to continue learning',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: context.cTextSecondary,
                           ),
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
+                    const SizedBox(height: 40),
+                    AppTextField(
+                      label: 'Email',
+                      hint: 'you@example.com',
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Email is required';
+                        }
+                        if (!_emailRegex.hasMatch(v.trim())) {
+                          return 'Enter a valid email address';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      label: 'Password',
+                      controller: _password,
+                      obscure: !_showPassword,
+                      suffix: IconButton(
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: context.cTextSecondary,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Password is required';
+                        }
+                        if (v.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    if (_inlineError != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline_rounded,
+                                size: 18, color: AppColors.error),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _inlineError!,
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                      child: const Text('Sign up'),
+                      const SizedBox(height: 16),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: GradientButton(
+                        label: 'Sign In',
+                        onPressed: _submitting ? null : _submit,
+                        loading: _submitting,
+                        icon: Icons.login_rounded,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Don't have an account? ",
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: context.cTextSecondary,
+                                  ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
+                          ),
+                          style:
+                              TextButton.styleFrom(padding: EdgeInsets.zero),
+                          child: const Text(
+                            'Sign up',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () => _showServerDialog(context),
+                        icon: Icon(
+                          Icons.dns_outlined,
+                          size: 15,
+                          color: context.cTextTertiary,
+                        ),
+                        label: Text(
+                          'Configure Server',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.cTextTertiary,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

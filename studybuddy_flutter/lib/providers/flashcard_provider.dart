@@ -5,12 +5,14 @@ import '../models/flashcard.dart';
 
 class FlashcardProvider extends ChangeNotifier {
   List<FlashcardSet> _sets = [];
+  List<FlashcardSet> _documentSets = [];
   FlashcardSet? _current;
   bool _loading = false;
   bool _generating = false;
   String? _error;
 
   List<FlashcardSet> get sets => _sets;
+  List<FlashcardSet> get documentSets => _documentSets;
   FlashcardSet? get current => _current;
   bool get loading => _loading;
   bool get generating => _generating;
@@ -30,8 +32,8 @@ class FlashcardProvider extends ChangeNotifier {
       _sets = list
           .map((s) => FlashcardSet.fromJson(s as Map<String, dynamic>))
           .toList();
-    } on ApiException catch (e) {
-      _error = e.message;
+    } on Object catch (e) {
+      _error = e.toString();
     } finally {
       _setLoading(false);
     }
@@ -40,17 +42,21 @@ class FlashcardProvider extends ChangeNotifier {
   Future<void> loadSetForDocument(String documentId) async {
     _setLoading(true);
     _error = null;
+    _documentSets = [];
     _current = null;
     try {
       final res = await ApiService.get('${ApiConstants.flashcards}/$documentId');
       final data = res['data'];
-      if (data is List && data.isNotEmpty) {
-        _current = FlashcardSet.fromJson(data.first as Map<String, dynamic>);
+      if (data is List) {
+        _documentSets = data
+            .map((s) => FlashcardSet.fromJson(s as Map<String, dynamic>))
+            .toList();
       } else if (data is Map) {
-        _current = FlashcardSet.fromJson(data as Map<String, dynamic>);
+        _documentSets = [FlashcardSet.fromJson(data as Map<String, dynamic>)];
       }
-    } on ApiException catch (e) {
-      _error = e.message;
+      _current = _documentSets.isNotEmpty ? _documentSets.first : null;
+    } on Object catch (e) {
+      _error = e.toString();
     } finally {
       _setLoading(false);
     }
@@ -72,12 +78,11 @@ class FlashcardProvider extends ChangeNotifier {
       }
       if (set != null) {
         _current = set;
-        // Refresh all sets
-        await loadSets();
+        _documentSets = [set, ..._documentSets];
       }
       return set;
-    } on ApiException catch (e) {
-      _error = e.message;
+    } on Object catch (e) {
+      _error = e.toString();
       return null;
     } finally {
       _generating = false;
@@ -88,7 +93,7 @@ class FlashcardProvider extends ChangeNotifier {
   Future<void> reviewCard(String cardId, String rating) async {
     try {
       await ApiService.post('/flashcards/$cardId/review', {'rating': rating});
-    } on ApiException {
+    } on Object {
       // non-critical
     }
   }
@@ -96,33 +101,42 @@ class FlashcardProvider extends ChangeNotifier {
   Future<void> toggleStar(String cardId) async {
     try {
       await ApiService.put('/flashcards/$cardId/star', {});
-      if (_current != null) {
-        final updated = _current!.flashcards.map((c) {
-          if (c.id == cardId) {
-            return Flashcard(
-              id: c.id,
-              question: c.question,
-              answer: c.answer,
-              topic: c.topic,
-              isStarred: !c.isStarred,
-              reviewCount: c.reviewCount,
-              confidenceScore: c.confidenceScore,
-            );
-          }
-          return c;
-        }).toList();
-        _current = FlashcardSet(
-          id: _current!.id,
-          documentId: _current!.documentId,
-          documentTitle: _current!.documentTitle,
-          totalCards: _current!.totalCards,
-          flashcards: updated,
-          createdAt: _current!.createdAt,
-        );
-        notifyListeners();
-      }
-    } on ApiException {
+      _updateStarInDocumentSets(cardId);
+      notifyListeners();
+    } on Object {
       // non-critical
+    }
+  }
+
+  void _updateStarInDocumentSets(String cardId) {
+    _documentSets = _documentSets.map((set) {
+      final idx = set.flashcards.indexWhere((c) => c.id == cardId);
+      if (idx == -1) return set;
+      final updated = List<Flashcard>.from(set.flashcards);
+      final old = updated[idx];
+      updated[idx] = Flashcard(
+        id: old.id,
+        question: old.question,
+        answer: old.answer,
+        topic: old.topic,
+        isStarred: !old.isStarred,
+        reviewCount: old.reviewCount,
+        confidenceScore: old.confidenceScore,
+      );
+      return FlashcardSet(
+        id: set.id,
+        documentId: set.documentId,
+        documentTitle: set.documentTitle,
+        totalCards: set.totalCards,
+        flashcards: updated,
+        createdAt: set.createdAt,
+      );
+    }).toList();
+    if (_current != null) {
+      _current = _documentSets.firstWhere(
+        (s) => s.id == _current!.id,
+        orElse: () => _documentSets.first,
+      );
     }
   }
 
@@ -130,10 +144,14 @@ class FlashcardProvider extends ChangeNotifier {
     try {
       await ApiService.delete('${ApiConstants.flashcards}/$id');
       _sets = _sets.where((s) => s.id != id).toList();
+      _documentSets = _documentSets.where((s) => s.id != id).toList();
+      if (_current?.id == id) {
+        _current = _documentSets.isNotEmpty ? _documentSets.first : null;
+      }
       notifyListeners();
       return true;
-    } on ApiException catch (e) {
-      _error = e.message;
+    } on Object catch (e) {
+      _error = e.toString();
       notifyListeners();
       return false;
     }

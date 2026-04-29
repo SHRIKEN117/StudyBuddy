@@ -1,6 +1,11 @@
 class ApiConstants {
-  // Use 10.0.2.2 for Android emulator, localhost for iOS simulator / real device on same network
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  // Default is empty — the user must set the server URL via the app's
+  // Configure Server / Profile > Server settings. The runtime value is
+  // stored in SharedPreferences and loaded by ApiService.init() on startup.
+  static const String baseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: '',
+  );
 
   static const String register = '/auth/register';
   static const String login = '/auth/login';
@@ -12,10 +17,12 @@ class ApiConstants {
 
   static const String flashcards = '/flashcards';
   static const String generateFlashcards = '/ai/generate-flashcards';
+  static const String quizzes = '/quizzes';
   static const String generateQuiz = '/ai/generate-quiz';
   static const String generateSummary = '/ai/generate-summary';
   static const String chat = '/ai/chat';
   static const String explainConcept = '/ai/explain-concept';
+  static const String extractConcepts = '/ai/extract-concepts';
 
   static const String dashboard = '/progress/dashboard';
 }

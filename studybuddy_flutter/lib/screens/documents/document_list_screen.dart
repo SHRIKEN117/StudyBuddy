@@ -33,15 +33,29 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
     if (result == null || result.files.isEmpty) return;
     final path = result.files.first.path;
     if (path == null) return;
+    if (!mounted) return;
+
+    final defaultTitle = path
+        .split('/')
+        .last
+        .replaceAll(RegExp(r'\.pdf$', caseSensitive: false), '');
+
+    final title = await showDialog<String>(
+      context: context,
+      builder: (ctx) => _TitleInputDialog(defaultTitle: defaultTitle),
+    );
+    if (title == null || !mounted) return;
 
     final provider = context.read<DocumentProvider>();
-    final ok = await provider.uploadDocument(File(path));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(ok ? 'Document uploaded successfully' : (provider.error ?? 'Upload failed')),
-        backgroundColor: ok ? AppColors.success : AppColors.error,
-      ));
-    }
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await provider.uploadDocument(File(path), title);
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(
+      content: Text(ok
+          ? 'Document uploaded successfully'
+          : (provider.error ?? 'Upload failed')),
+      backgroundColor: ok ? AppColors.success : AppColors.error,
+    ));
   }
 
   Future<void> _deleteDocument(BuildContext ctx, String id) async {
@@ -71,6 +85,8 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DocumentProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: context.read<DocumentProvider>().loadDocuments,
@@ -78,25 +94,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
-                color: AppColors.surface,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Documents',
-                        style: Theme.of(context).textTheme.displayMedium,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _uploadPdf,
-                      icon: const Icon(Icons.upload_rounded, size: 18),
-                      label: const Text('Upload PDF'),
-                    ),
-                  ],
-                ),
-              ),
+              child: _DocumentsHeader(isDark: isDark),
             ),
             if (provider.loading && provider.documents.isEmpty)
               const SliverFillRemaining(
@@ -109,17 +107,12 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                 child: EmptyState(
                   icon: Icons.description_outlined,
                   title: 'No documents yet',
-                  subtitle: 'Upload a PDF to get started',
-                  action: AppButton(
-                    label: 'Upload PDF',
-                    icon: Icons.upload_rounded,
-                    onPressed: _uploadPdf,
-                  ),
+                  subtitle: 'Tap the + button to upload a PDF',
                 ),
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => Padding(
@@ -142,12 +135,144 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                   ),
                 ),
               ),
+            const SliverToBoxAdapter(child: SizedBox(height: 140)),
           ],
+        ),
+      ),
+      floatingActionButton: _GradientFab(onPressed: _uploadPdf),
+    );
+  }
+}
+
+// ── Gradient mesh header ───────────────────────────────────────────────────────
+
+class _DocumentsHeader extends StatelessWidget {
+  final bool isDark;
+  const _DocumentsHeader({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 180,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Container(
+              color: isDark ? AppColors.darkBackground : AppColors.background,
+            ),
+          ),
+          Positioned(
+            top: -40, right: -20,
+            child: Container(
+              width: 200, height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.accent.withValues(alpha: isDark ? 0.30 : 0.16),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 60, left: -30,
+            child: Container(
+              width: 160, height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.primary.withValues(alpha: isDark ? 0.28 : 0.14),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0, right: 0, bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.accent.withValues(alpha: 0.30),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Text(
+                      'My Library',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.accent,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Documents',
+                    style: Theme.of(context)
+                        .textTheme
+                        .displayMedium
+                        ?.copyWith(height: 1.2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Gradient FAB ───────────────────────────────────────────────────────────────
+
+class _GradientFab extends StatelessWidget {
+  final VoidCallback onPressed;
+  const _GradientFab({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 80),
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          width: 58,
+          height: 58,
+          decoration: BoxDecoration(
+            gradient: AppGradients.primary,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.55),
+                blurRadius: 24,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
         ),
       ),
     );
   }
 }
+
+// ── Document card ──────────────────────────────────────────────────────────────
 
 class _DocumentCard extends StatelessWidget {
   final Document doc;
@@ -162,122 +287,121 @@ class _DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return GlassCard(
+      glowColor: AppColors.primary,
+      padding: const EdgeInsets.all(16),
+      borderRadius: BorderRadius.circular(18),
       onTap: doc.isReady ? onTap : null,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: const Border.fromBorderSide(BorderSide(color: AppColors.border)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.picture_as_pdf_rounded,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    doc.title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                StatusBadge(status: doc.status),
-                const SizedBox(width: 8),
-                PopupMenuButton<String>(
-                  onSelected: (v) {
-                    if (v == 'delete') onDelete();
-                  },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: AppColors.error)),
-                        ],
-                      ),
-                    ),
-                  ],
-                  icon: const Icon(
-                    Icons.more_vert_rounded,
-                    color: AppColors.textSecondary,
-                    size: 18,
-                  ),
-                ),
-              ],
-            ),
-            if (doc.description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                doc.description!,
-                style: Theme.of(context).textTheme.bodySmall,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GradientIcon(
+                icon: Icons.picture_as_pdf_rounded,
+                gradient: AppGradients.violet,
+                size: 44,
+                iconSize: 22,
               ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (doc.pageCount != null)
-                  _MetaChip(
-                    icon: Icons.article_outlined,
-                    label: '${doc.pageCount} pages',
-                  ),
-                if (doc.createdAt != null) ...[
-                  const SizedBox(width: 8),
-                  _MetaChip(
-                    icon: Icons.calendar_today_outlined,
-                    label: DateFormat('MMM d, y').format(doc.createdAt!),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  doc.title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              StatusBadge(status: doc.status),
+              const SizedBox(width: 4),
+              PopupMenuButton<String>(
+                onSelected: (v) {
+                  if (v == 'delete') onDelete();
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline,
+                            size: 18, color: AppColors.error),
+                        SizedBox(width: 8),
+                        Text('Delete',
+                            style: TextStyle(color: AppColors.error)),
+                      ],
+                    ),
                   ),
                 ],
-                const Spacer(),
-                Row(
-                  children: [
-                    if (doc.hasFlashcards)
-                      const Tooltip(
-                        message: 'Has flashcards',
-                        child: Icon(
-                          Icons.style_outlined,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    if (doc.hasQuizzes)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 6),
-                        child: Tooltip(
-                          message: 'Has quizzes',
-                          child: Icon(
-                            Icons.quiz_outlined,
-                            size: 16,
-                            color: AppColors.accent,
-                          ),
-                        ),
-                      ),
-                  ],
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: context.cTextSecondary,
+                  size: 18,
                 ),
-              ],
+              ),
+            ],
+          ),
+          if (doc.description != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              doc.description!,
+              style: Theme.of(context).textTheme.bodySmall,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
-        ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (doc.pageCount != null)
+                _MetaChip(
+                  icon: Icons.article_outlined,
+                  label: '${doc.pageCount} pages',
+                ),
+              if (doc.createdAt != null) ...[
+                const SizedBox(width: 10),
+                _MetaChip(
+                  icon: Icons.calendar_today_outlined,
+                  label: DateFormat('MMM d, y').format(doc.createdAt!),
+                ),
+              ],
+              const Spacer(),
+              if (doc.hasFlashcards)
+                Tooltip(
+                  message: 'Has flashcards',
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.style_rounded,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              if (doc.hasFlashcards && doc.hasQuizzes)
+                const SizedBox(width: 6),
+              if (doc.hasQuizzes)
+                Tooltip(
+                  message: 'Has quizzes',
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.quiz_rounded,
+                      size: 14,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -294,9 +418,69 @@ class _MetaChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: AppColors.textSecondary),
+        Icon(icon, size: 12, color: context.cTextSecondary),
         const SizedBox(width: 4),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+// ── Title input dialog ─────────────────────────────────────────────────────────
+
+class _TitleInputDialog extends StatefulWidget {
+  final String defaultTitle;
+  const _TitleInputDialog({required this.defaultTitle});
+
+  @override
+  State<_TitleInputDialog> createState() => _TitleInputDialogState();
+}
+
+class _TitleInputDialogState extends State<_TitleInputDialog> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.defaultTitle);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Document Title'),
+      content: TextField(
+        controller: _ctrl,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'Enter a title for this document',
+        ),
+        textCapitalization: TextCapitalization.sentences,
+        onSubmitted: (_) => Navigator.pop(
+          context,
+          _ctrl.text.trim().isEmpty ? widget.defaultTitle : _ctrl.text.trim(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(
+            context,
+            _ctrl.text.trim().isEmpty
+                ? widget.defaultTitle
+                : _ctrl.text.trim(),
+          ),
+          child: const Text('Upload'),
+        ),
       ],
     );
   }
