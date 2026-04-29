@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
@@ -52,11 +53,11 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(bottom: 12.h),
                       child: _FlashcardSetCard(
                         set: provider.sets[i],
                         onStudy: () => Navigator.push(
@@ -117,7 +118,7 @@ class _FlashcardsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 180,
+      height: 180.h,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -160,33 +161,32 @@ class _FlashcardsHeader extends StatelessWidget {
           Positioned(
             left: 0, right: 0, bottom: 0,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 5),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20.r),
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.30),
                         width: 1,
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Study Mode',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primary,
                         letterSpacing: 0.3,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10.h),
                   Text(
                     'Flashcards',
                     style: Theme.of(context)
@@ -221,8 +221,8 @@ class _FlashcardSetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       glowColor: AppColors.primary,
-      padding: const EdgeInsets.all(16),
-      borderRadius: BorderRadius.circular(18),
+      padding: EdgeInsets.all(16.r),
+      borderRadius: BorderRadius.circular(18.r),
       child: Row(
         children: [
           GradientIcon(
@@ -231,7 +231,7 @@ class _FlashcardSetCard extends StatelessWidget {
             size: 48,
             iconSize: 22,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,27 +242,26 @@ class _FlashcardSetCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(20.r),
                       ),
                       child: Text(
                         '${set.totalCards} cards',
-                        style: const TextStyle(
-                          fontSize: 11,
+                        style: TextStyle(
+                          fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
                           color: AppColors.primary,
                         ),
                       ),
                     ),
                     if (set.createdAt != null) ...[
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6.w),
                       Text(
                         DateFormat('MMM d').format(set.createdAt!),
                         style: Theme.of(context).textTheme.bodySmall,
@@ -273,14 +272,14 @@ class _FlashcardSetCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           GestureDetector(
             onTap: onStudy,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               decoration: BoxDecoration(
                 gradient: AppGradients.primary,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withValues(alpha: 0.40),
@@ -289,17 +288,17 @@ class _FlashcardSetCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Text(
+              child: Text(
                 'Study',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4.w),
           PopupMenuButton<String>(
             onSelected: (v) {
               if (v == 'delete') onDelete();

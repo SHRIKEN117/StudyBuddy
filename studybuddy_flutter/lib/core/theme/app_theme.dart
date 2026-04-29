@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   AppColors._();
 
-  // ── Primary: electric purple ───────────────────────────────────────────────
   static const primary = Color(0xFF7C3AED);
   static const primaryLight = Color(0xFFA78BFA);
   static const primaryDark = Color(0xFF5B21B6);
 
-  // ── Accent: hot pink ───────────────────────────────────────────────────────
   static const accent = Color(0xFFEC4899);
   static const accentLight = Color(0xFFF9A8D4);
 
-  // ── Light mode surfaces (lavender-tinted) ──────────────────────────────────
   static const background = Color(0xFFF3F0FF);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceVariant = Color(0xFFEDE9FE);
@@ -23,7 +21,6 @@ class AppColors {
   static const border = Color(0xFFDDD6FE);
   static const borderFocus = Color(0xFF7C3AED);
 
-  // ── Dark mode surfaces (deep indigo/black) ─────────────────────────────────
   static const darkBackground = Color(0xFF0F0A1E);
   static const darkSurface = Color(0xFF1A1035);
   static const darkSurfaceVariant = Color(0xFF221440);
@@ -32,59 +29,44 @@ class AppColors {
   static const darkTextTertiary = Color(0xFF4A4170);
   static const darkBorder = Color(0xFF2D1F5E);
 
-  // ── Semantics ──────────────────────────────────────────────────────────────
   static const success = Color(0xFF10B981);
   static const error = Color(0xFFEF4444);
   static const warning = Color(0xFFF59E0B);
 }
 
-/// Named gradients used throughout the app.
 class AppGradients {
   AppGradients._();
 
-  /// Electric purple → hot pink — primary CTA gradient
   static const primary = LinearGradient(
     colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
-  /// Violet-only gradient
   static const violet = LinearGradient(
     colors: [Color(0xFF6D28D9), Color(0xFF9333EA)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
-  /// Rose/pink gradient
   static const rose = LinearGradient(
     colors: [Color(0xFFBE185D), Color(0xFFEC4899)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
-  /// Cyan gradient
   static const cyan = LinearGradient(
     colors: [Color(0xFF0891B2), Color(0xFF06B6D4)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
-  /// Emerald gradient
   static const emerald = LinearGradient(
     colors: [Color(0xFF047857), Color(0xFF10B981)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
-  /// Amber gradient
   static const amber = LinearGradient(
     colors: [Color(0xFFB45309), Color(0xFFF59E0B)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-
-  /// Deep card background (dark mode only)
   static const card = LinearGradient(
     colors: [Color(0xFF2D1F5E), Color(0xFF1A1035)],
     begin: Alignment.topLeft,
@@ -92,8 +74,6 @@ class AppGradients {
   );
 }
 
-/// Theme-aware color getters. Always use these instead of raw AppColors
-/// constants for surfaces, borders, and text that adapt to dark mode.
 extension AppColorsX on BuildContext {
   bool get _dk => Theme.of(this).brightness == Brightness.dark;
 
@@ -110,7 +90,6 @@ extension AppColorsX on BuildContext {
   Color get cTextTertiary =>
       _dk ? AppColors.darkTextTertiary : AppColors.textTertiary;
 
-  // Glass helpers
   Color get cGlass => _dk
       ? Colors.white.withValues(alpha: 0.06)
       : Colors.white.withValues(alpha: 0.85);
@@ -140,7 +119,7 @@ class AppTheme {
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: GoogleFonts.ubuntu(
-          fontSize: 18,
+          fontSize: 18.sp,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
@@ -150,7 +129,7 @@ class AppTheme {
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
           side: const BorderSide(color: AppColors.border),
         ),
       ),
@@ -158,14 +137,15 @@ class AppTheme {
       elevatedButtonTheme: _buildElevatedButtonTheme(),
       outlinedButtonTheme: _buildOutlinedButtonTheme(),
       textButtonTheme: _buildTextButtonTheme(),
-      dividerTheme:
-          const DividerThemeData(color: AppColors.border, thickness: 1, space: 1),
+      dividerTheme: const DividerThemeData(
+          color: AppColors.border, thickness: 1, space: 1),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceVariant,
-        labelStyle:
-            GoogleFonts.ubuntu(fontSize: 12, color: AppColors.textSecondary),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        labelStyle: GoogleFonts.ubuntu(
+            fontSize: 12.sp, color: AppColors.textSecondary),
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.r)),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.transparent,
@@ -194,7 +174,7 @@ class AppTheme {
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: GoogleFonts.ubuntu(
-          fontSize: 18,
+          fontSize: 18.sp,
           fontWeight: FontWeight.w700,
           color: AppColors.darkText,
         ),
@@ -204,7 +184,7 @@ class AppTheme {
         color: AppColors.darkSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
           side: const BorderSide(color: AppColors.darkBorder),
         ),
       ),
@@ -217,9 +197,10 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.darkSurfaceVariant,
         labelStyle:
-            GoogleFonts.ubuntu(fontSize: 12, color: AppColors.darkText),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            GoogleFonts.ubuntu(fontSize: 12.sp, color: AppColors.darkText),
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.r)),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.transparent,
@@ -227,7 +208,8 @@ class AppTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
       ),
     );
   }
@@ -238,30 +220,30 @@ class AppTheme {
     final secondary =
         isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     return GoogleFonts.ubuntuTextTheme(base).copyWith(
-      displayLarge:
-          GoogleFonts.ubuntu(fontSize: 36, fontWeight: FontWeight.w800, color: text),
-      displayMedium:
-          GoogleFonts.ubuntu(fontSize: 30, fontWeight: FontWeight.w800, color: text),
-      headlineLarge:
-          GoogleFonts.ubuntu(fontSize: 24, fontWeight: FontWeight.w700, color: text),
-      headlineMedium:
-          GoogleFonts.ubuntu(fontSize: 20, fontWeight: FontWeight.w700, color: text),
-      headlineSmall:
-          GoogleFonts.ubuntu(fontSize: 18, fontWeight: FontWeight.w700, color: text),
-      titleLarge:
-          GoogleFonts.ubuntu(fontSize: 16, fontWeight: FontWeight.w600, color: text),
-      titleMedium:
-          GoogleFonts.ubuntu(fontSize: 15, fontWeight: FontWeight.w500, color: text),
-      titleSmall:
-          GoogleFonts.ubuntu(fontSize: 13, fontWeight: FontWeight.w600, color: text),
-      bodyLarge:
-          GoogleFonts.ubuntu(fontSize: 15, fontWeight: FontWeight.w400, color: text),
-      bodyMedium:
-          GoogleFonts.ubuntu(fontSize: 14, fontWeight: FontWeight.w400, color: text),
-      bodySmall:
-          GoogleFonts.ubuntu(fontSize: 12, fontWeight: FontWeight.w400, color: secondary),
-      labelLarge:
-          GoogleFonts.ubuntu(fontSize: 14, fontWeight: FontWeight.w700, color: text),
+      displayLarge: GoogleFonts.ubuntu(
+          fontSize: 36.sp, fontWeight: FontWeight.w800, color: text),
+      displayMedium: GoogleFonts.ubuntu(
+          fontSize: 30.sp, fontWeight: FontWeight.w800, color: text),
+      headlineLarge: GoogleFonts.ubuntu(
+          fontSize: 24.sp, fontWeight: FontWeight.w700, color: text),
+      headlineMedium: GoogleFonts.ubuntu(
+          fontSize: 20.sp, fontWeight: FontWeight.w700, color: text),
+      headlineSmall: GoogleFonts.ubuntu(
+          fontSize: 18.sp, fontWeight: FontWeight.w700, color: text),
+      titleLarge: GoogleFonts.ubuntu(
+          fontSize: 16.sp, fontWeight: FontWeight.w600, color: text),
+      titleMedium: GoogleFonts.ubuntu(
+          fontSize: 15.sp, fontWeight: FontWeight.w500, color: text),
+      titleSmall: GoogleFonts.ubuntu(
+          fontSize: 13.sp, fontWeight: FontWeight.w600, color: text),
+      bodyLarge: GoogleFonts.ubuntu(
+          fontSize: 15.sp, fontWeight: FontWeight.w400, color: text),
+      bodyMedium: GoogleFonts.ubuntu(
+          fontSize: 14.sp, fontWeight: FontWeight.w400, color: text),
+      bodySmall: GoogleFonts.ubuntu(
+          fontSize: 12.sp, fontWeight: FontWeight.w400, color: secondary),
+      labelLarge: GoogleFonts.ubuntu(
+          fontSize: 14.sp, fontWeight: FontWeight.w700, color: text),
     );
   }
 
@@ -271,38 +253,39 @@ class AppTheme {
       filled: true,
       fillColor: isDark ? AppColors.darkSurfaceVariant : AppColors.surface,
       contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
         borderSide: BorderSide(
             color: isDark ? AppColors.darkBorder : AppColors.border),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
         borderSide: BorderSide(
             color: isDark ? AppColors.darkBorder : AppColors.border),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
         borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
         borderSide: const BorderSide(color: AppColors.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14.r),
         borderSide: const BorderSide(color: AppColors.error, width: 2),
       ),
       labelStyle: GoogleFonts.ubuntu(
-        fontSize: 14,
-        color: isDark
-            ? AppColors.darkTextSecondary
-            : AppColors.textSecondary,
+        fontSize: 14.sp,
+        color:
+            isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
       ),
       hintStyle: GoogleFonts.ubuntu(
-        fontSize: 14,
-        color: isDark ? AppColors.darkTextTertiary : AppColors.textTertiary,
+        fontSize: 14.sp,
+        color: isDark
+            ? AppColors.darkTextTertiary
+            : AppColors.textTertiary,
       ),
     );
   }
@@ -315,11 +298,11 @@ class AppTheme {
           elevation: 0,
           shadowColor: Colors.transparent,
           padding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14)),
-          textStyle:
-              GoogleFonts.ubuntu(fontSize: 15, fontWeight: FontWeight.w700),
+              borderRadius: BorderRadius.circular(14.r)),
+          textStyle: GoogleFonts.ubuntu(
+              fontSize: 15.sp, fontWeight: FontWeight.w700),
         ),
       );
 
@@ -329,11 +312,11 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary),
           padding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14)),
-          textStyle:
-              GoogleFonts.ubuntu(fontSize: 15, fontWeight: FontWeight.w700),
+              borderRadius: BorderRadius.circular(14.r)),
+          textStyle: GoogleFonts.ubuntu(
+              fontSize: 15.sp, fontWeight: FontWeight.w700),
         ),
       );
 
@@ -341,8 +324,8 @@ class AppTheme {
       TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          textStyle:
-              GoogleFonts.ubuntu(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.ubuntu(
+              fontSize: 14.sp, fontWeight: FontWeight.w600),
         ),
       );
 }

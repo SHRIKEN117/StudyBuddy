@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
@@ -99,28 +100,28 @@ Future<void> _submit() async {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 56),
+                    SizedBox(height: 48.h),
                     // Logo
                     Image.asset(
                       isDark
                           ? 'assets/images/logo_dark.png'
                           : 'assets/images/logo.png',
-                      width: 120,
-                      height: 120,
+                      width: 120.r,
+                      height: 120.r,
                     ),
-                    const SizedBox(height: 36),
+                    SizedBox(height: 28.h),
                     Text(
                       'Welcome back',
                       style: Theme.of(context).textTheme.displayMedium,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 6.h),
                     Text(
                       'Sign in to continue learning',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: context.cTextSecondary,
                           ),
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 32.h),
                     AppTextField(
                       label: 'Email',
                       hint: 'you@example.com',
@@ -136,7 +137,7 @@ Future<void> _submit() async {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 14.h),
                     AppTextField(
                       label: 'Password',
                       controller: _password,
@@ -161,39 +162,39 @@ Future<void> _submit() async {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 20.h),
                     if (_inlineError != null) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 14.w, vertical: 12.h),
                         decoration: BoxDecoration(
                           color: AppColors.error.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(
                               color: AppColors.error.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline_rounded,
-                                size: 18, color: AppColors.error),
-                            const SizedBox(width: 10),
+                            Icon(Icons.error_outline_rounded,
+                                size: 18.r, color: AppColors.error),
+                            SizedBox(width: 10.w),
                             Expanded(
                               child: Text(
                                 _inlineError!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.error,
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 14.h),
                     ],
                     SizedBox(
                       width: double.infinity,
-                      height: 52,
+                      height: 52.h,
                       child: GradientButton(
                         label: 'Sign In',
                         onPressed: _submitting ? null : _submit,

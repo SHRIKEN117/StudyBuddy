@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/theme/app_theme.dart';
 
@@ -25,13 +26,13 @@ class GlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final br = borderRadius ?? BorderRadius.circular(16);
+    final br = borderRadius ?? BorderRadius.circular(16.r);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: width,
-        padding: padding ?? const EdgeInsets.all(16),
+        padding: padding ?? EdgeInsets.all(16.r),
         decoration: BoxDecoration(
           color: isDark
               ? Colors.white.withValues(alpha: 0.06)
@@ -82,12 +83,13 @@ class GradientIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = size.r;
     return Container(
-      width: size,
-      height: size,
+      width: s,
+      height: s,
       decoration: BoxDecoration(
         gradient: gradient,
-        borderRadius: BorderRadius.circular(size * 0.27),
+        borderRadius: BorderRadius.circular(s * 0.27),
         boxShadow: [
           BoxShadow(
             color: gradient.colors.first.withValues(alpha: 0.40),
@@ -96,15 +98,13 @@ class GradientIcon extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(icon, color: Colors.white, size: iconSize),
+      child: Icon(icon, color: Colors.white, size: iconSize.r),
     );
   }
 }
 
 // ── GradientButton ────────────────────────────────────────────────────────────
 
-/// A standalone gradient button — use for primary CTAs where full width
-/// or custom sizing is needed without the AppButton wrapper.
 class GradientButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -127,12 +127,12 @@ class GradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !loading;
     return SizedBox(
-      height: height,
+      height: height.h,
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: enabled ? gradient : null,
           color: enabled ? null : AppColors.primary.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14.r),
           boxShadow: enabled
               ? [
                   BoxShadow(
@@ -151,25 +151,25 @@ class GradientButton extends StatelessWidget {
             foregroundColor: Colors.white,
             disabledForegroundColor: Colors.white60,
             disabledBackgroundColor: Colors.transparent,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14.r)),
             textStyle:
-                GoogleFonts.ubuntu(fontSize: 15, fontWeight: FontWeight.w700),
+                GoogleFonts.ubuntu(fontSize: 15.sp, fontWeight: FontWeight.w700),
           ),
           child: loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
+              ? SizedBox(
+                  width: 20.r,
+                  height: 20.r,
+                  child: const CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white),
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, size: 18),
-                      const SizedBox(width: 8),
+                      Icon(icon, size: 18.r),
+                      SizedBox(width: 8.w),
                     ],
                     Text(label),
                   ],
@@ -203,18 +203,18 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = loading
-        ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
+        ? SizedBox(
+            width: 20.r,
+            height: 20.r,
+            child: const CircularProgressIndicator(
                 strokeWidth: 2, color: Colors.white),
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18),
-                const SizedBox(width: 8),
+                Icon(icon, size: 18.r),
+                SizedBox(width: 8.w),
               ],
               Text(label),
             ],
@@ -225,12 +225,11 @@ class AppButton extends StatelessWidget {
           onPressed: loading ? null : onPressed, child: child);
     }
 
-    // Gradient by default when no custom color is specified
     if (color == null && !loading && onPressed != null) {
       return DecoratedBox(
         decoration: BoxDecoration(
           gradient: AppGradients.primary,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14.r),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.42),
@@ -247,11 +246,11 @@ class AppButton extends StatelessWidget {
             foregroundColor: Colors.white,
             elevation: 0,
             padding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(14.r)),
             textStyle:
-                GoogleFonts.ubuntu(fontSize: 15, fontWeight: FontWeight.w700),
+                GoogleFonts.ubuntu(fontSize: 15.sp, fontWeight: FontWeight.w700),
           ),
           child: child,
         ),
@@ -264,10 +263,11 @@ class AppButton extends StatelessWidget {
         backgroundColor: color ?? AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14.r)),
         textStyle:
-            GoogleFonts.ubuntu(fontSize: 15, fontWeight: FontWeight.w700),
+            GoogleFonts.ubuntu(fontSize: 15.sp, fontWeight: FontWeight.w700),
       ),
       child: child,
     );
@@ -308,7 +308,7 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       style: TextStyle(
         color: context.cTextPrimary,
-        fontSize: 15,
+        fontSize: 15.sp,
       ),
       decoration: InputDecoration(
         labelText: label,
@@ -341,8 +341,7 @@ class SectionHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Text(title, style: Theme.of(context).textTheme.headlineSmall),
               if (subtitle != null)
                 Text(subtitle!,
                     style: Theme.of(context).textTheme.bodySmall),
@@ -375,7 +374,7 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -385,14 +384,14 @@ class EmptyState extends StatelessWidget {
               size: 72,
               iconSize: 32,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
             Text(
               title,
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Text(
                 subtitle!,
                 style: Theme.of(context)
@@ -403,7 +402,7 @@ class EmptyState extends StatelessWidget {
               ),
             ],
             if (action != null) ...[
-              const SizedBox(height: 28),
+              SizedBox(height: 28.h),
               action!,
             ],
           ],
@@ -439,10 +438,10 @@ class StatusBadge extends StatelessWidget {
         label = status;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: color.withValues(alpha: 0.35)),
         boxShadow: [
           BoxShadow(
@@ -455,7 +454,7 @@ class StatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 11.sp,
           fontWeight: FontWeight.w700,
           color: color,
           letterSpacing: 0.2,

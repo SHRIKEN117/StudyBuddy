@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
@@ -79,7 +80,7 @@ Future<void> _changePassword() async {
             child: _ProfileHeader(user: user, isDark: isDark),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _SectionCard(
@@ -92,16 +93,16 @@ Future<void> _changePassword() async {
                       controller: _currentPwCtrl,
                       obscure: true,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     AppTextField(
                       label: 'New Password',
                       controller: _newPwCtrl,
                       obscure: true,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
+                      height: 48.h,
                       child: AppButton(
                         label: 'Update Password',
                         loading: _changingPw,
@@ -110,7 +111,7 @@ Future<void> _changePassword() async {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 _SectionCard(
                   title: 'Appearance',
                   icon: Icons.palette_outlined,
@@ -122,11 +123,11 @@ Future<void> _changePassword() async {
                             color: context.cTextSecondary,
                           ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10.h),
                     const _ThemePicker(),
                   ],
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14.h),
                 _SectionCard(
                   title: 'Account',
                   icon: Icons.manage_accounts_outlined,
@@ -137,44 +138,44 @@ Future<void> _changePassword() async {
                       child: Row(
                         children: [
                           Container(
-                            width: 38,
-                            height: 38,
+                            width: 38.r,
+                            height: 38.r,
                             decoration: BoxDecoration(
                               color: AppColors.error.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(10.r),
                             ),
-                            child: const Icon(Icons.logout_rounded,
-                                color: AppColors.error, size: 18),
+                            child: Icon(Icons.logout_rounded,
+                                color: AppColors.error, size: 18.r),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12.w),
                           Expanded(
                             child: Text(
                               'Sign Out',
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 15.sp,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.error,
                               ),
                             ),
                           ),
                           if (_loggingOut)
-                            const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
+                            SizedBox(
+                              width: 18.r,
+                              height: 18.r,
+                              child: const CircularProgressIndicator(
                                 strokeWidth: 2,
                                 color: AppColors.error,
                               ),
                             )
                           else
                             Icon(Icons.arrow_forward_ios_rounded,
-                                size: 14, color: context.cTextTertiary),
+                                size: 14.r, color: context.cTextTertiary),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 140),
+                SizedBox(height: 140.h),
               ]),
             ),
           ),
@@ -198,7 +199,7 @@ class _ProfileHeader extends StatelessWidget {
         : '?';
 
     return SizedBox(
-      height: 240,
+      height: 240.h,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -240,14 +241,14 @@ class _ProfileHeader extends StatelessWidget {
           Positioned(
             left: 0, right: 0, bottom: 0,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Avatar
                   Container(
-                    width: 76,
-                    height: 76,
+                    width: 76.r,
+                    height: 76.r,
                     decoration: BoxDecoration(
                       gradient: AppGradients.primary,
                       shape: BoxShape.circle,
@@ -262,20 +263,20 @@ class _ProfileHeader extends StatelessWidget {
                     child: Center(
                       child: Text(
                         initial,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 30,
+                          fontSize: 30.sp,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.h),
                   Text(
                     user?.username ?? '',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2.h),
                   Text(
                     user?.email ?? '',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -283,7 +284,7 @@ class _ProfileHeader extends StatelessWidget {
                         ),
                   ),
                   if (user?.createdAt != null) ...[
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.h),
                     Text(
                       'Joined ${DateFormat('MMMM y').format(user!.createdAt!)}',
                       style: Theme.of(context).textTheme.bodySmall,
@@ -318,8 +319,8 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       glowColor: gradient.colors.first,
-      padding: const EdgeInsets.all(20),
-      borderRadius: BorderRadius.circular(18),
+      padding: EdgeInsets.all(20.r),
+      borderRadius: BorderRadius.circular(18.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -331,14 +332,14 @@ class _SectionCard extends StatelessWidget {
                 size: 36,
                 iconSize: 18,
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10.w),
               Text(title,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       )),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
           ...children,
         ],
       ),
@@ -362,14 +363,14 @@ class _ThemePicker extends StatelessWidget {
           label: 'Light',
           current: current,
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
         _ThemeOption(
           mode: ThemeMode.system,
           icon: Icons.brightness_auto_rounded,
           label: 'Auto',
           current: current,
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
         _ThemeOption(
           mode: ThemeMode.dark,
           icon: Icons.dark_mode_rounded,
@@ -403,11 +404,11 @@ class _ThemeOption extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(vertical: 14.h),
           decoration: BoxDecoration(
             gradient: selected ? AppGradients.primary : null,
             color: selected ? null : context.cSurfaceVariant,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
               color: selected
                   ? Colors.transparent
@@ -429,14 +430,14 @@ class _ThemeOption extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 20,
+                size: 20.r,
                 color: selected ? Colors.white : context.cTextSecondary,
               ),
-              const SizedBox(height: 5),
+              SizedBox(height: 5.h),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                   color: selected ? Colors.white : context.cTextSecondary,
                 ),

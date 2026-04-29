@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
@@ -53,11 +54,11 @@ class _QuizListScreenState extends State<QuizListScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(bottom: 12.h),
                       child: _QuizCard(
                         quiz: provider.quizzes[i],
                         onTake: () => Navigator.push(
@@ -118,7 +119,7 @@ class _QuizzesHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 180,
+      height: 180.h,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -161,33 +162,32 @@ class _QuizzesHeader extends StatelessWidget {
           Positioned(
             left: 0, right: 0, bottom: 0,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 5),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
                     decoration: BoxDecoration(
                       color: AppColors.accent.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20.r),
                       border: Border.all(
                         color: AppColors.accent.withValues(alpha: 0.30),
                         width: 1,
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Quiz Time',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
                         color: AppColors.accent,
                         letterSpacing: 0.3,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10.h),
                   Text(
                     'Quizzes',
                     style: Theme.of(context)
@@ -229,8 +229,8 @@ class _QuizCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       glowColor: AppColors.accent,
-      padding: const EdgeInsets.all(16),
-      borderRadius: BorderRadius.circular(18),
+      padding: EdgeInsets.all(16.r),
+      borderRadius: BorderRadius.circular(18.r),
       child: Row(
         children: [
           GradientIcon(
@@ -239,7 +239,7 @@ class _QuizCard extends StatelessWidget {
             size: 48,
             iconSize: 22,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,22 +252,21 @@ class _QuizCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                       decoration: BoxDecoration(
                         color: AppColors.accent.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(20.r),
                       ),
                       child: Text(
                         '${quiz.totalQuestions} questions',
-                        style: const TextStyle(
-                          fontSize: 11,
+                        style: TextStyle(
+                          fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
                           color: AppColors.accent,
                         ),
@@ -280,16 +279,15 @@ class _QuizCard extends StatelessWidget {
                       ),
                     if (quiz.isCompleted && quiz.score != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                         decoration: BoxDecoration(
                           gradient: _scoreGradient,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Text(
                           '${quiz.score}%',
-                          style: const TextStyle(
-                            fontSize: 11,
+                          style: TextStyle(
+                            fontSize: 11.sp,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
@@ -300,14 +298,14 @@ class _QuizCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.w),
           GestureDetector(
             onTap: onTake,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               decoration: BoxDecoration(
                 gradient: AppGradients.rose,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.accent.withValues(alpha: 0.40),
@@ -318,15 +316,15 @@ class _QuizCard extends StatelessWidget {
               ),
               child: Text(
                 quiz.isCompleted ? 'Retake' : 'Take',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 13,
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: 4.w),
           PopupMenuButton<String>(
             onSelected: (v) {
               if (v == 'delete') onDelete();

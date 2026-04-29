@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
@@ -112,11 +113,11 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(bottom: 12.h),
                       child: _DocumentCard(
                         doc: provider.documents[i],
                         onTap: () => Navigator.push(
@@ -153,7 +154,7 @@ class _DocumentsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 180,
+      height: 180.h,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -195,33 +196,32 @@ class _DocumentsHeader extends StatelessWidget {
           Positioned(
             left: 0, right: 0, bottom: 0,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 5),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
                     decoration: BoxDecoration(
                       color: AppColors.accent.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20.r),
                       border: Border.all(
                         color: AppColors.accent.withValues(alpha: 0.30),
                         width: 1,
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'My Library',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
                         color: AppColors.accent,
                         letterSpacing: 0.3,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10.h),
                   Text(
                     'Documents',
                     style: Theme.of(context)
@@ -248,12 +248,12 @@ class _GradientFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 80),
+      padding: EdgeInsets.only(bottom: 80.h),
       child: GestureDetector(
         onTap: onPressed,
         child: Container(
-          width: 58,
-          height: 58,
+          width: 58.r,
+          height: 58.r,
           decoration: BoxDecoration(
             gradient: AppGradients.primary,
             shape: BoxShape.circle,
@@ -265,7 +265,7 @@ class _GradientFab extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+          child: Icon(Icons.add_rounded, color: Colors.white, size: 28.r),
         ),
       ),
     );
@@ -289,8 +289,8 @@ class _DocumentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       glowColor: AppColors.primary,
-      padding: const EdgeInsets.all(16),
-      borderRadius: BorderRadius.circular(18),
+      padding: EdgeInsets.all(16.r),
+      borderRadius: BorderRadius.circular(18.r),
       onTap: doc.isReady ? onTap : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,7 +303,7 @@ class _DocumentCard extends StatelessWidget {
                 size: 44,
                 iconSize: 22,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               Expanded(
                 child: Text(
                   doc.title,
@@ -341,7 +341,7 @@ class _DocumentCard extends StatelessWidget {
             ],
           ),
           if (doc.description != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               doc.description!,
               style: Theme.of(context).textTheme.bodySmall,
@@ -349,7 +349,7 @@ class _DocumentCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Row(
             children: [
               if (doc.pageCount != null)
@@ -358,7 +358,7 @@ class _DocumentCard extends StatelessWidget {
                   label: '${doc.pageCount} pages',
                 ),
               if (doc.createdAt != null) ...[
-                const SizedBox(width: 10),
+                SizedBox(width: 10.w),
                 _MetaChip(
                   icon: Icons.calendar_today_outlined,
                   label: DateFormat('MMM d, y').format(doc.createdAt!),
@@ -369,32 +369,32 @@ class _DocumentCard extends StatelessWidget {
                 Tooltip(
                   message: 'Has flashcards',
                   child: Container(
-                    padding: const EdgeInsets.all(5),
+                    padding: EdgeInsets.all(5.r),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.style_rounded,
-                      size: 14,
+                      size: 14.r,
                       color: AppColors.primary,
                     ),
                   ),
                 ),
               if (doc.hasFlashcards && doc.hasQuizzes)
-                const SizedBox(width: 6),
+                SizedBox(width: 6.w),
               if (doc.hasQuizzes)
                 Tooltip(
                   message: 'Has quizzes',
                   child: Container(
-                    padding: const EdgeInsets.all(5),
+                    padding: EdgeInsets.all(5.r),
                     decoration: BoxDecoration(
                       color: AppColors.accent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.quiz_rounded,
-                      size: 14,
+                      size: 14.r,
                       color: AppColors.accent,
                     ),
                   ),
@@ -418,8 +418,8 @@ class _MetaChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: context.cTextSecondary),
-        const SizedBox(width: 4),
+        Icon(icon, size: 12.r, color: context.cTextSecondary),
+        SizedBox(width: 4.w),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );

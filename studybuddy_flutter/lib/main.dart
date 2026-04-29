@@ -1,4 +1,6 @@
 import 'dart:ui' show ImageFilter;
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
@@ -39,13 +41,18 @@ class StudyBuddyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotesProvider()),
       ],
       child: Consumer<SettingsProvider>(
-        builder: (_, settings, _) => MaterialApp(
-          title: 'StudyBuddy',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: settings.themeMode,
-          home: const _AppRoot(),
+        builder: (context, settings, child) => ScreenUtilInit(
+          designSize: const Size(390, 844),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (_, _) => MaterialApp(
+            title: 'StudyBuddy',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: settings.themeMode,
+            home: const _AppRoot(),
+          ),
         ),
       ),
     );
@@ -364,7 +371,7 @@ class _FloatingPillNav extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
-          height: 66,
+          height: 66.h,
           decoration: BoxDecoration(
             color: isDark
                 ? const Color(0xFF1A1035).withValues(alpha: 0.95)
@@ -435,8 +442,8 @@ class _PillNavItem extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
-          horizontal: isActive ? 16 : 12,
-          vertical: 8,
+          horizontal: isActive ? 16.w : 12.w,
+          vertical: 8.h,
         ),
         decoration: isActive
             ? BoxDecoration(
@@ -457,7 +464,7 @@ class _PillNavItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 22,
+              size: 22.r,
               color: isActive
                   ? Colors.white
                   : (isDark
@@ -471,12 +478,12 @@ class _PillNavItem extends StatelessWidget {
                   ? Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6.w),
                         Text(
                           label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 13,
+                            fontSize: 13.sp,
                             fontWeight: FontWeight.w700,
                           ),
                         ),

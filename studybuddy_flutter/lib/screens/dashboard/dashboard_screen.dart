@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
@@ -77,16 +78,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               )
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 0),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _StatGrid(
                       overview: _overview,
                       onTabTap: widget.onTabTap,
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
                     _RecentActivity(recentActivity: _recentActivity),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                   ]),
                 ),
               ),
@@ -115,7 +116,7 @@ class _DashboardHeader extends StatelessWidget {
     final dateStr = DateFormat('EEEE, MMMM d').format(DateTime.now());
 
     return SizedBox(
-      height: 210,
+      height: 210.h,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -177,18 +178,17 @@ class _DashboardHeader extends StatelessWidget {
           Positioned(
             left: 0, right: 0, bottom: 0,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Date pill badge
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20.r),
                       border: Border.all(
                         color: AppColors.primary.withValues(alpha: 0.30),
                         width: 1,
@@ -196,15 +196,15 @@ class _DashboardHeader extends StatelessWidget {
                     ),
                     child: Text(
                       dateStr,
-                      style: const TextStyle(
-                        fontSize: 11,
+                      style: TextStyle(
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primary,
                         letterSpacing: 0.3,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10.h),
                   Text(
                     '$greeting, ${username.isNotEmpty ? username : 'there'} 👋',
                     style: Theme.of(context)
@@ -254,7 +254,7 @@ class _StatGrid extends StatelessWidget {
               .titleLarge
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 14),
+        SizedBox(height: 14.h),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -293,8 +293,8 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       glowColor: data.gradient.colors.first,
-      padding: const EdgeInsets.all(14),
-      borderRadius: BorderRadius.circular(18),
+      padding: EdgeInsets.all(14.r),
+      borderRadius: BorderRadius.circular(18.r),
       onTap: onTap,
       child: Row(
         children: [
@@ -304,7 +304,7 @@ class _StatCard extends StatelessWidget {
             size: 42,
             iconSize: 20,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,18 +408,17 @@ class _RecentActivity extends StatelessWidget {
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
             if (items.isNotEmpty) ...[
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                 decoration: BoxDecoration(
                   gradient: AppGradients.primary,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Text(
                   '${items.length}',
-                  style: const TextStyle(
-                    fontSize: 11,
+                  style: TextStyle(
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
@@ -428,13 +427,13 @@ class _RecentActivity extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: 14),
+        SizedBox(height: 14.h),
         GlassCard(
           padding: EdgeInsets.zero,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(18.r),
           child: visible.isEmpty
               ? Padding(
-                  padding: const EdgeInsets.all(28),
+                  padding: EdgeInsets.all(28.r),
                   child: Column(
                     children: [
                       GradientIcon(
@@ -443,7 +442,7 @@ class _RecentActivity extends StatelessWidget {
                         size: 52,
                         iconSize: 26,
                       ),
-                      const SizedBox(height: 14),
+                      SizedBox(height: 14.h),
                       Text(
                         'No recent activity yet',
                         style: Theme.of(context).textTheme.titleSmall,
@@ -463,8 +462,8 @@ class _RecentActivity extends StatelessWidget {
                     return Column(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 13),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.w, vertical: 13.h),
                           child: Row(
                             children: [
                               GradientIcon(
@@ -477,7 +476,7 @@ class _RecentActivity extends StatelessWidget {
                                 size: 36,
                                 iconSize: 18,
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12.w),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,7 +501,7 @@ class _RecentActivity extends StatelessWidget {
                               ),
                               Icon(
                                 Icons.arrow_forward_ios_rounded,
-                                size: 12,
+                                size: 12.r,
                                 color: context.cTextTertiary,
                               ),
                             ],

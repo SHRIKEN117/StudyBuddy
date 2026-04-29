@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
@@ -125,38 +126,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     // Back button
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
-                        width: 40,
-                        height: 40,
+                        width: 40.r,
+                        height: 40.r,
                         decoration: BoxDecoration(
                           color: context.cGlass,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(color: context.cGlassBorder),
                         ),
                         child: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          size: 18,
+                          size: 18.r,
                           color: context.cTextPrimary,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
                     Text(
                       'Create account',
                       style: Theme.of(context).textTheme.displayMedium,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     Text(
                       'Start your AI-powered learning journey',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: context.cTextSecondary,
                           ),
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40.h),
                     AppTextField(
                       label: 'Username',
                       hint: 'your_username',
@@ -171,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     AppTextField(
                       label: 'Email',
                       hint: 'you@example.com',
@@ -187,7 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     AppTextField(
                       label: 'Password',
                       controller: _password,
@@ -212,39 +213,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     if (_inlineError != null) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 14.w, vertical: 12.h),
                         decoration: BoxDecoration(
                           color: AppColors.error.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(
                               color: AppColors.error.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline_rounded,
-                                size: 18, color: AppColors.error),
-                            const SizedBox(width: 10),
+                            Icon(Icons.error_outline_rounded,
+                                size: 18.r, color: AppColors.error),
+                            SizedBox(width: 10.w),
                             Expanded(
                               child: Text(
                                 _inlineError!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.error,
-                                  fontSize: 13,
+                                  fontSize: 13.sp,
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
                     ],
                     SizedBox(
                       width: double.infinity,
-                      height: 52,
+                      height: 52.h,
                       child: GradientButton(
                         label: 'Create Account',
                         onPressed: _submitting ? null : _submit,
@@ -252,7 +253,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         icon: Icons.person_add_rounded,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -274,7 +275,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32.h),
                   ],
                 ),
               ),
