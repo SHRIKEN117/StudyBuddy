@@ -104,7 +104,6 @@ class _SplashScreenState extends State<_SplashScreen>
   late final Animation<double> _logoScale;
   late final Animation<double> _logoOpacity;
   late final Animation<double> _textOpacity;
-  late final Animation<Offset> _textSlide;
 
   @override
   void initState() {
@@ -131,12 +130,7 @@ class _SplashScreenState extends State<_SplashScreen>
     _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _textCtrl, curve: Curves.easeOut),
     );
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _textCtrl, curve: Curves.easeOutCubic));
-
-    _logoCtrl.forward().then((_) => _textCtrl.forward());
+_logoCtrl.forward().then((_) => _textCtrl.forward());
   }
 
   @override
@@ -204,75 +198,15 @@ class _SplashScreenState extends State<_SplashScreen>
                     opacity: _logoOpacity.value,
                     child: Transform.scale(
                       scale: _logoScale.value,
-                      child: Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          gradient: AppGradients.primary,
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.55),
-                              blurRadius: 40,
-                              spreadRadius: 4,
-                              offset: const Offset(0, 12),
-                            ),
-                            BoxShadow(
-                              color: AppColors.accent.withValues(alpha: 0.25),
-                              blurRadius: 60,
-                              spreadRadius: 0,
-                              offset: const Offset(0, 20),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.school_rounded,
-                          color: Colors.white,
-                          size: 48,
-                        ),
+                      child: Image.asset(
+                        'assets/images/logo_dark.png',
+                        width: 180,
+                        height: 180,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
-                // Animated text
-                AnimatedBuilder(
-                  animation: _textCtrl,
-                  builder: (_, _) => FadeTransition(
-                    opacity: _textOpacity,
-                    child: SlideTransition(
-                      position: _textSlide,
-                      child: Column(
-                        children: [
-                          ShaderMask(
-                            shaderCallback: (bounds) =>
-                                AppGradients.primary.createShader(bounds),
-                            child: const Text(
-                              'StudyBuddy',
-                              style: TextStyle(
-                                fontSize: 34,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Your AI learning companion',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.darkTextSecondary,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 64),
+                const SizedBox(height: 48),
                 // Subtle loading dots
                 AnimatedBuilder(
                   animation: _textCtrl,

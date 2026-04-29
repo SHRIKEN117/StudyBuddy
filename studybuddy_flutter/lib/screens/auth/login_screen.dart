@@ -101,22 +101,12 @@ Future<void> _submit() async {
                   children: [
                     const SizedBox(height: 56),
                     // Logo
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.primary,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.50),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(Icons.school_rounded,
-                          color: Colors.white, size: 30),
+                    Image.asset(
+                      isDark
+                          ? 'assets/images/logo_dark.png'
+                          : 'assets/images/logo.png',
+                      width: 120,
+                      height: 120,
                     ),
                     const SizedBox(height: 36),
                     Text(
