@@ -1,10 +1,7 @@
 class ApiConstants {
-  // Default is empty — the user must set the server URL via the app's
-  // Configure Server / Profile > Server settings. The runtime value is
-  // stored in SharedPreferences and loaded by ApiService.init() on startup.
   static const String baseUrl = String.fromEnvironment(
     'BASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://studybuddy-l06n.onrender.com/api',
   );
 
   static const String register = '/auth/register';
