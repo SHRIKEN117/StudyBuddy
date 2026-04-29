@@ -123,6 +123,55 @@ export const generateQuiz = async (req, res, next) => {
 // @access Private
 export const generateSummary = async (req, res, next) => {
   try {
+    const { documentId, length = 'standard' } = req.body;
+
+    if (!documentId) {
+      return res.status(400).json({
+        success: false,
+        error: "Document ID is required",
+        statusCode: 400,
+      });
+    }
+
+    const document = await Document.findOne({
+      _id: documentId,
+      userId: req.user._id,
+      status: "Ready",
+    });
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        error: "Document not found or not ready",
+        statusCode: 404,
+      });
+    }
+
+    const summary = await geminiService.generateSummary(document.extractedText, length);
+
+    // Cache the generated summary on the document
+    await Document.findByIdAndUpdate(document._id, { summary });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        summary,
+        documentId: document._id,
+        title: document.title,
+      },
+      message: "Summary generated successfully",
+      statusCode: 200,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Extract key concepts from document
+// @route POST /api/ai/extract-concepts
+// @access Private
+export const extractConcepts = async (req, res, next) => {
+  try {
     const { documentId } = req.body;
 
     if (!documentId) {
@@ -147,20 +196,14 @@ export const generateSummary = async (req, res, next) => {
       });
     }
 
-    const summary = await geminiService.generateSummary(document.extractedText);
-
-    // Cache the generated summary on the document
-    await Document.findByIdAndUpdate(document._id, { summary });
+    const concepts = await geminiService.extractConcepts(document.extractedText);
 
     res.status(200).json({
       success: true,
       data: {
-        summary,
+        concepts,
         documentId: document._id,
-        title: document.title,
       },
-      message: "Summary generated successfully",
-      statusCode: 200,
     });
   } catch (error) {
     next(error);

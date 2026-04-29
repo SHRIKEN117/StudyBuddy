@@ -17,7 +17,15 @@ const documentSchema = new mongoose.Schema({
     },
     filePath: {
         type: String,
-        required: true
+        default: null,
+    },
+    fileUrl: {
+        type: String,
+        default: null,
+    },
+    cloudinaryPublicId: {
+        type: String,
+        default: null,
     },
     fileSize: {
         type: Number,
@@ -67,7 +75,6 @@ const documentSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Index for faster queries
 documentSchema.index({ userId: 1, uploadDate: -1 });
 
 const Document = mongoose.model('Document', documentSchema);

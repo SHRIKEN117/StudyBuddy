@@ -25,25 +25,13 @@
  // Connect to MongoDB
  connectDB();
 
-// Middleware to handle CORS
+// Allow all origins — mobile apps (Flutter/React Native) send no Origin header,
+// and this backend has no session cookies so credentials: true is not needed.
 app.use(
     cors({
-        origin: (origin, callback) => {
-            // Allow requests with no origin (Postman, curl, mobile apps)
-            if (!origin) return callback(null, true);
-            // In development allow any localhost port (handles Vite's auto port bumping)
-            if (process.env.NODE_ENV === "development" && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
-                return callback(null, true);
-            }
-            // In production check against the configured FRONTEND_URL
-            if (origin === process.env.FRONTEND_URL) {
-                return callback(null, true);
-            }
-            callback(new Error("Not allowed by CORS"));
-        },
+        origin: "*",
         methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
-        credentials: true,
     })
 );
 
@@ -62,6 +50,9 @@ app.use('/api/ai', aiRoutes)
 app.use('/api/quizzes', quizRoutes)
 app.use('/api/progress', progressRoutes)
 
+
+// Health check — used by Render and uptime monitors
+app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 app.use(errorHandler);
 

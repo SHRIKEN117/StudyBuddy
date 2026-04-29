@@ -124,8 +124,52 @@ ${text.substring(0, 15000)}`;
   }
 };
 
-export const generateSummary = async (text) => {
-  const prompt = `Analyze the following document and produce a structured study summary in Markdown.
+export const generateSummary = async (text, length = 'standard') => {
+  let prompt;
+
+  if (length === 'brief') {
+    prompt = `Analyze the following document and produce a concise bullet-point summary in Markdown.
+
+Use exactly this structure:
+
+## Overview
+2-3 sentences describing what this document covers.
+
+## Key Points
+Bullet-point list of the most important ideas and takeaways.
+
+Document:
+${text.substring(0, 20000)}`;
+  } else if (length === 'detailed') {
+    prompt = `Analyze the following document and produce a comprehensive study summary in Markdown.
+
+Use exactly this structure:
+
+## Overview
+2-3 sentences describing what this document covers.
+
+## Key Concepts
+Bullet-point list of the most important ideas and topics.
+
+## Main Takeaways
+Numbered list of the most important points to remember.
+
+## Important Terms
+A short glossary: each entry as **term** — definition.
+
+## Examples
+Concrete examples or case studies that illustrate the main concepts.
+
+## Critical Analysis
+Strengths, limitations, or notable considerations about the material.
+
+## Study Questions
+5-7 questions a student should be able to answer after studying this document.
+
+Document:
+${text.substring(0, 20000)}`;
+  } else {
+    prompt = `Analyze the following document and produce a structured study summary in Markdown.
 
 Use exactly this structure:
 
@@ -143,12 +187,51 @@ A short glossary: each entry as **term** — definition.
 
 Document:
 ${text.substring(0, 20000)}`;
+  }
 
   try {
     return await ask(prompt);
   } catch (error) {
     console.error("Claude API error (generateSummary):", error);
     throw new Error("Failed to generate summary");
+  }
+};
+
+export const extractConcepts = async (text) => {
+  const prompt = `Extract the key concepts/terms from the text. For each concept provide:
+T: [Term name]
+D: [Clear 1-2 sentence definition]
+---
+(separate each with ---)
+Text: ${text.substring(0, 15000)}`;
+
+  try {
+    const generatedText = await ask(prompt);
+    const concepts = [];
+    const blocks = generatedText.split("---").filter((b) => b.trim());
+
+    for (const block of blocks) {
+      const lines = block.trim().split("\n");
+      let term = "", definition = "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("T:")) {
+          term = trimmed.substring(2).trim();
+        } else if (trimmed.startsWith("D:")) {
+          definition = trimmed.substring(2).trim();
+        }
+      }
+
+      if (term && definition) {
+        concepts.push({ term, definition });
+      }
+    }
+
+    return concepts.slice(0, 20);
+  } catch (error) {
+    console.error("Claude API error (extractConcepts):", error);
+    throw new Error("Failed to extract concepts");
   }
 };
 

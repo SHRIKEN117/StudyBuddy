@@ -1,5 +1,6 @@
 import express from "express";
 import {
+    getAllQuizzes,
     getQuizzes,
     getQuizById,
     submitQuiz,
@@ -11,8 +12,9 @@ import protect from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/:documentId", protect, getQuizzes);
+router.get("/", protect, getAllQuizzes);
 router.get("/quiz/:id", protect, getQuizById);
+router.get("/:documentId", protect, getQuizzes);
 router.post("/:id/submit", protect, submitQuiz);
 router.get("/:id/results", protect, getQuizResults);
 router.post("/:id/retake", protect, retakeQuiz);

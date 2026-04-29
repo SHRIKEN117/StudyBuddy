@@ -7,6 +7,7 @@ import {
   chat,
   explainConcept,
   getChatHistory,
+  extractConcepts,
 } from "../controllers/aiController.js";
 import protect from "../middleware/auth.js";
 
@@ -19,5 +20,6 @@ router.get("/summary/:documentId", protect, getSummary);
 router.post("/chat", protect, chat);
 router.post("/explain-concept", protect, explainConcept);
 router.get("/chat-history/:documentId", protect, getChatHistory);
+router.post("/extract-concepts", protect, extractConcepts);
 
 export default router;
