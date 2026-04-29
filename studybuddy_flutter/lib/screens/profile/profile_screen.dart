@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/services/api_service.dart';
-import '../../core/constants/api_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/app_widgets.dart';
@@ -20,31 +18,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _newPwCtrl = TextEditingController();
   bool _changingPw = false;
   bool _loggingOut = false;
-  late final _serverUrlCtrl =
-      TextEditingController(text: ApiService.baseUrl);
 
   @override
   void dispose() {
     _currentPwCtrl.dispose();
     _newPwCtrl.dispose();
-    _serverUrlCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _saveServerUrl() async {
-    final url = _serverUrlCtrl.text.trim();
-    if (url.isEmpty) return;
-    await ApiService.setBaseUrl(url);
-    _serverUrlCtrl.text = ApiService.baseUrl;
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Server URL saved'),
-        backgroundColor: AppColors.success,
-      ));
-    }
-  }
-
-  Future<void> _changePassword() async {
+Future<void> _changePassword() async {
     if (_currentPwCtrl.text.isEmpty || _newPwCtrl.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('New password must be at least 6 characters'),
@@ -140,36 +122,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 10),
                     const _ThemePicker(),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                _SectionCard(
-                  title: 'Server',
-                  icon: Icons.dns_outlined,
-                  gradient: AppGradients.amber,
-                  children: [
-                    Text(
-                      'Backend URL',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: context.cTextSecondary,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
-                    AppTextField(
-                      label: 'Server URL',
-                      hint: 'http://192.168.x.x:8000/api',
-                      controller: _serverUrlCtrl,
-                      keyboardType: TextInputType.url,
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: AppButton(
-                        label: 'Save URL',
-                        onPressed: _saveServerUrl,
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 14),

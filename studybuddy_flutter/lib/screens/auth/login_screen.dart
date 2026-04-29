@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/services/api_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_widgets.dart';
@@ -32,52 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _showServerDialog(BuildContext ctx) async {
-    final ctrl = TextEditingController(text: ApiService.baseUrl);
-    await showDialog<void>(
-      context: ctx,
-      builder: (_) => AlertDialog(
-        title: const Text('Server URL'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Enter your backend URL (e.g. http://192.168.1.10:8000/api)',
-              style: Theme.of(ctx).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ctrl,
-              keyboardType: TextInputType.url,
-              autocorrect: false,
-              decoration: const InputDecoration(
-                hintText: 'http://192.168.x.x:8000/api',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final url = ctrl.text.trim();
-              if (url.isNotEmpty) await ApiService.setBaseUrl(url);
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    ctrl.dispose();
-  }
-
-  Future<void> _submit() async {
+Future<void> _submit() async {
     setState(() => _inlineError = null);
     if (!_formKey.currentState!.validate()) return;
     if (_submitting) return;
@@ -283,24 +237,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: TextButton.icon(
-                        onPressed: () => _showServerDialog(context),
-                        icon: Icon(
-                          Icons.dns_outlined,
-                          size: 15,
-                          color: context.cTextTertiary,
-                        ),
-                        label: Text(
-                          'Configure Server',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.cTextTertiary,
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                 ),
