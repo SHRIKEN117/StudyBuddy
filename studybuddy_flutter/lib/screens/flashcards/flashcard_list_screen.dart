@@ -24,6 +24,40 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
     });
   }
 
+  Future<void> _showStudySheet(FlashcardSet set) async {
+    if (set.flashcards.length <= 3) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => FlashcardReviewScreen(flashcardSet: set),
+      ));
+      return;
+    }
+
+    final count = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _FlashcardStudySheet(totalCards: set.flashcards.length),
+    );
+
+    if (count == null || !mounted) return;
+
+    final shuffled = List.of(set.flashcards)..shuffle();
+    final cards = count >= set.flashcards.length ? set.flashcards : shuffled.take(count).toList();
+
+    final subset = FlashcardSet(
+      id: set.id,
+      documentId: set.documentId,
+      documentTitle: set.documentTitle,
+      totalCards: cards.length,
+      flashcards: cards,
+      createdAt: set.createdAt,
+    );
+
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => FlashcardReviewScreen(flashcardSet: subset),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<FlashcardProvider>();
@@ -52,21 +86,14 @@ class _FlashcardListScreenState extends State<FlashcardListScreen> {
               )
             else
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
+                padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 16.h),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => Padding(
                       padding: EdgeInsets.only(bottom: 14.h),
                       child: _FlashcardSetCard(
                         set: provider.sets[i],
-                        onStudy: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FlashcardReviewScreen(
-                              flashcardSet: provider.sets[i],
-                            ),
-                          ),
-                        ),
+                        onStudy: () => _showStudySheet(provider.sets[i]),
                         onDelete: () async {
                           final confirmed = await showDialog<bool>(
                             context: context,
@@ -130,7 +157,7 @@ class _FlashcardsHeader extends StatelessWidget {
             top: 0, left: 0, right: 0,
             child: SafeArea(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
                 child: Row(
                   children: [
                     Builder(
@@ -338,6 +365,186 @@ class _FlashcardSetCard extends StatelessWidget {
             ],
             icon: Icon(Icons.more_vert_rounded,
                 color: context.cTextSecondary, size: 18),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Study count picker sheet ───────────────────────────────────────────────────
+
+class _FlashcardStudySheet extends StatefulWidget {
+  final int totalCards;
+  const _FlashcardStudySheet({required this.totalCards});
+
+  @override
+  State<_FlashcardStudySheet> createState() => _FlashcardStudySheetState();
+}
+
+class _FlashcardStudySheetState extends State<_FlashcardStudySheet> {
+  late int _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.totalCards >= 10 ? 10 : widget.totalCards;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [5, 10, 20].where((n) => n < widget.totalCards).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.cSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        12,
+        24,
+        24 + MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: context.cBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Text(
+            'Study Flashcards',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'How many cards do you want to study?',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: context.cTextSecondary,
+                ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              ...options.map((n) {
+                final selected = n == _selected;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selected = n),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.primary
+                              : context.cSurfaceVariant,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color:
+                                selected ? AppColors.primary : context.cBorder,
+                            width: selected ? 2 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              '$n',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    color: selected
+                                        ? Colors.white
+                                        : context.cTextPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            Text(
+                              'Cards',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: selected
+                                        ? Colors.white70
+                                        : context.cTextSecondary,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selected = widget.totalCards),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: _selected == widget.totalCards
+                          ? AppColors.primary
+                          : context.cSurfaceVariant,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selected == widget.totalCards
+                            ? AppColors.primary
+                            : context.cBorder,
+                        width: _selected == widget.totalCards ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'All',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                color: _selected == widget.totalCards
+                                    ? Colors.white
+                                    : context.cTextPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        Text(
+                          '${widget.totalCards}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: _selected == widget.totalCards
+                                    ? Colors.white70
+                                    : context.cTextSecondary,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context, _selected),
+              child: Text('Study $_selected Cards'),
+            ),
           ),
         ],
       ),

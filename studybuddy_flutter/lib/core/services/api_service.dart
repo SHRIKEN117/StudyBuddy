@@ -15,16 +15,36 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static const _timeout = Duration(seconds: 15);
+  static const _timeout = Duration(seconds: 30);
+  static const _aiTimeout = Duration(seconds: 120);
+  static const _uploadTimeout = Duration(seconds: 60);
   static String _baseUrl = ApiConstants.baseUrl;
+  static String? _cachedToken;
+
+  // Persistent client enables TCP connection reuse (keep-alive) across requests.
+  static final _client = http.Client();
+
+  // AI endpoints need much more time for generation
+  static Duration _timeoutFor(String path) =>
+      path.startsWith('/ai/') ? _aiTimeout : _timeout;
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString('server_url');
     if (saved != null && saved.isNotEmpty) _baseUrl = saved;
+    // Pre-warm token cache at startup
+    _cachedToken = prefs.getString('token');
   }
 
   static String get baseUrl => _baseUrl;
+
+  static void cacheToken(String token) {
+    _cachedToken = token;
+  }
+
+  static void clearToken() {
+    _cachedToken = null;
+  }
 
   static Future<void> setBaseUrl(String url) async {
     _baseUrl = url.trim().replaceAll(RegExp(r'/$'), '');
@@ -33,8 +53,10 @@ class ApiService {
   }
 
   static Future<String?> _getToken() async {
+    if (_cachedToken != null) return _cachedToken;
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
+    _cachedToken = prefs.getString('token');
+    return _cachedToken;
   }
 
   static Future<Map<String, String>> _headers({bool auth = true}) async {
@@ -43,6 +65,13 @@ class ApiService {
       final token = await _getToken();
       if (token != null) headers['Authorization'] = 'Bearer $token';
     }
+    return headers;
+  }
+
+  static Future<Map<String, String>> authHeaders() async {
+    final headers = <String, String>{};
+    final token = await _getToken();
+    if (token != null) headers['Authorization'] = 'Bearer $token';
     return headers;
   }
 
@@ -80,12 +109,12 @@ class ApiService {
 
   static Future<Map<String, dynamic>> get(String path) async {
     try {
-      final response = await http
+      final response = await _client
           .get(
             Uri.parse('$_baseUrl$path'),
             headers: await _headers(),
           )
-          .timeout(_timeout);
+          .timeout(_timeoutFor(path));
       return _parse(response);
     } catch (e) {
       _rethrow(e);
@@ -98,13 +127,13 @@ class ApiService {
     bool auth = true,
   }) async {
     try {
-      final response = await http
+      final response = await _client
           .post(
             Uri.parse('$_baseUrl$path'),
             headers: await _headers(auth: auth),
             body: jsonEncode(body),
           )
-          .timeout(_timeout);
+          .timeout(_timeoutFor(path));
       return _parse(response);
     } catch (e) {
       _rethrow(e);
@@ -116,13 +145,13 @@ class ApiService {
     Map<String, dynamic> body,
   ) async {
     try {
-      final response = await http
+      final response = await _client
           .put(
             Uri.parse('$_baseUrl$path'),
             headers: await _headers(),
             body: jsonEncode(body),
           )
-          .timeout(_timeout);
+          .timeout(_timeoutFor(path));
       return _parse(response);
     } catch (e) {
       _rethrow(e);
@@ -131,12 +160,12 @@ class ApiService {
 
   static Future<Map<String, dynamic>> delete(String path) async {
     try {
-      final response = await http
+      final response = await _client
           .delete(
             Uri.parse('$_baseUrl$path'),
             headers: await _headers(),
           )
-          .timeout(_timeout);
+          .timeout(_timeoutFor(path));
       return _parse(response);
     } catch (e) {
       _rethrow(e);
@@ -164,7 +193,7 @@ class ApiService {
         file.path,
         contentType: MediaType('application', 'pdf'),
       ));
-      final streamed = await request.send().timeout(_timeout);
+      final streamed = await _client.send(request).timeout(_uploadTimeout);
       final response = await http.Response.fromStream(streamed);
       return _parse(response);
     } catch (e) {

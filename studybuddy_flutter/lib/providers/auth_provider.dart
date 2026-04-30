@@ -30,6 +30,7 @@ class AuthProvider extends ChangeNotifier {
     } on Object {
       // Token invalid or network down — clear token and stay on login screen
       await prefs.remove('token');
+      ApiService.clearToken();
     }
   }
 
@@ -51,6 +52,7 @@ class AuthProvider extends ChangeNotifier {
       }
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
+      ApiService.cacheToken(token);
       _user = User.fromJson(userMap);
       return true;
     } on Object catch (e) {
@@ -80,6 +82,7 @@ class AuthProvider extends ChangeNotifier {
       }
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
+      ApiService.cacheToken(token);
       _user = User.fromJson(userMap);
       return true;
     } on Object catch (e) {
@@ -93,6 +96,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    ApiService.clearToken();
     _user = null;
     notifyListeners();
   }
