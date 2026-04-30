@@ -4,6 +4,7 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme/app_theme.dart';
 
 class PdfViewerScreen extends StatefulWidget {
@@ -23,8 +24,24 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   int _totalPages = 0;
   double? _downloadProgress; // null = not started, 0-1 = in progress
 
-  // Session-level cache: URL → local file path
+  // Session-level memory cache: URL → local file path
   static final Map<String, String> _pathCache = {};
+
+  static Future<String?> _diskCachedPath(String url) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/sb_pdf_${url.hashCode.abs()}.pdf');
+      if (await file.exists()) return file.path;
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<String> _saveToDiskCache(String url, List<int> bytes) async {
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/sb_pdf_${url.hashCode.abs()}.pdf');
+    await file.writeAsBytes(bytes);
+    return file.path;
+  }
 
   static const _bg = Color(0xFF0F0F1A);
   static const _cardBg = Color(0xFF1A1A2E);
@@ -62,50 +79,56 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         return;
       }
 
-      // Check session cache first
-      final cached = _pathCache[resolved];
-      if (cached != null && File(cached).existsSync()) {
-        if (mounted) setState(() => _localPath = cached);
+      // Check in-memory session cache
+      final memCached = _pathCache[resolved];
+      if (memCached != null && File(memCached).existsSync()) {
+        if (mounted) setState(() => _localPath = memCached);
+        return;
+      }
+
+      // Check persistent disk cache (survives app restarts)
+      final diskCached = await _diskCachedPath(resolved);
+      if (diskCached != null) {
+        _pathCache[resolved] = diskCached;
+        if (mounted) setState(() => _localPath = diskCached);
         return;
       }
 
       final uri = Uri.parse(resolved);
+      final client = http.Client();
+      try {
+        final request = http.Request('GET', uri);
+        final hdrs = await ApiService.authHeaders();
+        request.headers.addAll(hdrs);
+        final response = await client
+            .send(request)
+            .timeout(const Duration(seconds: 60));
 
-      // Try streaming download with Content-Length progress
-      final request = http.Request('GET', uri);
-      final response = await request
-          .send()
-          .timeout(const Duration(seconds: 120));
-
-      if (response.statusCode != 200) {
-        throw Exception('Download failed (${response.statusCode})');
-      }
-
-      final contentLength = response.contentLength ?? 0;
-      final bytes = <int>[];
-
-      if (mounted) setState(() => _downloadProgress = 0.0);
-
-      await for (final chunk in response.stream) {
-        bytes.addAll(chunk);
-        if (contentLength > 0 && mounted) {
-          setState(() =>
-              _downloadProgress = (bytes.length / contentLength).clamp(0.0, 1.0));
+        if (response.statusCode != 200) {
+          throw Exception('Download failed (${response.statusCode})');
         }
+
+        final contentLength = response.contentLength ?? 0;
+        final bytes = <int>[];
+
+        if (mounted) setState(() => _downloadProgress = 0.0);
+
+        await for (final chunk in response.stream) {
+          bytes.addAll(chunk);
+          if (contentLength > 0 && mounted) {
+            setState(() =>
+                _downloadProgress = (bytes.length / contentLength).clamp(0.0, 1.0));
+          }
+        }
+
+        final filePath = await _saveToDiskCache(resolved, bytes);
+        _pathCache[resolved] = filePath;
+        if (mounted) setState(() => _localPath = filePath);
+      } finally {
+        client.close();
       }
-
-      final dir = await getApplicationDocumentsDirectory();
-      final fileName = uri.pathSegments.lastWhere(
-        (s) => s.isNotEmpty,
-        orElse: () => 'document.pdf',
-      );
-      final file = File('${dir.path}/$fileName');
-      await file.writeAsBytes(bytes);
-
-      _pathCache[resolved] = file.path;
-      if (mounted) setState(() => _localPath = file.path);
     } on Exception catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = 'Could not load PDF: ${e.toString().replaceAll('Exception: ', '')}');
     }
   }
 

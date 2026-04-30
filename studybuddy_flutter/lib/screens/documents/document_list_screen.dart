@@ -112,7 +112,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
               )
             else
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
+                padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 16.h),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => Padding(
@@ -161,12 +161,12 @@ class _DocumentsHeader extends StatelessWidget {
               color: isDark ? AppColors.darkBackground : AppColors.background,
             ),
           ),
-          // Hamburger
+          // Hamburger + Upload button
           Positioned(
             top: 0, left: 0, right: 0,
             child: SafeArea(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
                 child: Row(
                   children: [
                     Builder(
@@ -177,6 +177,42 @@ class _DocumentsHeader extends StatelessWidget {
                         onPressed: () => Scaffold.of(context).openDrawer(),
                       ),
                     ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: onUpload,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 14.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.primary,
+                          borderRadius: BorderRadius.circular(20.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.upload_file_rounded,
+                                color: Colors.white, size: 16.r),
+                            SizedBox(width: 6.w),
+                            Text(
+                              'Upload PDF',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
                   ],
                 ),
               ),
@@ -216,79 +252,38 @@ class _DocumentsHeader extends StatelessWidget {
             left: 0, right: 0, bottom: 0,
             child: Padding(
               padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 24.h),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 12.w, vertical: 5.h),
-                          decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(20.r),
-                            border: Border.all(
-                              color: AppColors.accent.withValues(alpha: 0.30),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            'My Library',
-                            style: TextStyle(
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.accent,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10.h),
-                        Text(
-                          'Documents',
-                          style: Theme.of(context)
-                              .textTheme
-                              .displayMedium
-                              ?.copyWith(height: 1.2),
-                        ),
-                      ],
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 12.w, vertical: 5.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(
+                        color: AppColors.accent.withValues(alpha: 0.30),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      'My Library',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.accent,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: onUpload,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 16.w, vertical: 10.h),
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.primary,
-                        borderRadius: BorderRadius.circular(22.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.45),
-                            blurRadius: 18,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.upload_file_rounded,
-                              color: Colors.white, size: 18.r),
-                          SizedBox(width: 6.w),
-                          Text(
-                            'Upload PDF',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  SizedBox(height: 10.h),
+                  Text(
+                    'Documents',
+                    style: Theme.of(context)
+                        .textTheme
+                        .displayMedium
+                        ?.copyWith(height: 1.2),
                   ),
                 ],
               ),
