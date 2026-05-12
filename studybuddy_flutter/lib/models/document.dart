@@ -11,7 +11,7 @@ class Document {
   final bool hasFlashcards;
   final bool hasQuizzes;
   final bool hasSummary;
-
+  
   const Document({
     required this.id,
     required this.title,
